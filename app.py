@@ -38,6 +38,31 @@ DATABASE = 'database.db'
     ''')
 
 
+    # Tabela Principal do Produto (Página 5)
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS produtos (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            codigo_produto TEXT UNIQUE NOT NULL,
+            nome_produto TEXT NOT NULL,
+            custo_total_fabricacao REAL DEFAULT 0
+        )
+    ''')
+
+    # Tabela União/Roteiro: Vincula Máquinas e Materiais ao Produto (Página 5)
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS estrutura_produto (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            produto_id INTEGER NOT NULL,
+            maquina_id INTEGER,
+            material_id INTEGER,
+            tempo_processo_min REAL DEFAULT 0,
+            quantidade_material REAL DEFAULT 0,
+            FOREIGN KEY(produto_id) REFERENCES produtos(id)
+        )
+    ''')
+
+
+
 def get_db_connection():
     conn = sqlite3.connect(DATABASE)
     conn.row_factory = sqlite3.Row
@@ -303,3 +328,60 @@ def deletar_material(id):
     conn.commit()
     conn.close()
     return redirect(url_for('materiais'))
+# --- ROTAS DA PÁGINA 5: ENGENHARIA DE PRODUTO ---
+@app.route('/engenharia')
+def engenharia():
+    conn = get_db_connection()
+    produtos = conn.execute('SELECT * FROM produtos').fetchall()
+    maquinas = conn.execute('SELECT id, nome_equipamento, custo_minuto_maquina FROM maquinas').fetchall()
+    materiais = conn.execute('SELECT id, nome_material, preco_unidade FROM materiais').fetchall()
+    
+    # Busca a árvore completa de composições detalhadas para exibir na tabela
+    composicoes = conn.execute('''
+        SELECT ep.*, p.nome_produto, p.codigo_produto, m.nome_equipamento, mat.nome_material 
+        FROM estrutura_produto ep
+        JOIN produtos p ON ep.produto_id = p.id
+        LEFT JOIN maquinas m ON ep.maquina_id = m.id
+        LEFT JOIN materiais mat ON ep.material_id = mat.id
+    ''').fetchall()
+    conn.close()
+    
+    return render_template('engenharia.html', produtos=produtos, maquinas=maquinas, materiais=materiais, composicoes=composicoes)
+
+@app.route('/salvar_produto', methods=['POST'])
+def salvar_produto():
+    codigo = request.form['codigo_produto']
+    nome = request.form['nome_produto']
+    
+    try:
+        conn = get_db_connection()
+        conn.execute('INSERT INTO produtos (codigo_produto, nome_produto) VALUES (?, ?)', (codigo, nome))
+        conn.commit()
+        conn.close()
+    except sqlite3.IntegrityError:
+        return "Erro: Código de produto já cadastrado."
+    return redirect(url_for('engenharia'))
+@app.route('/vincular_estrutura', methods=['POST'])
+def vincular_estrutura():
+    prod_id = int(request.form['produto_id'])
+    maq_id = request.form['maquina_id'] or None
+    mat_id = request.form['material_id'] or None
+    tempo = float(request.form['tempo_processo_min'] or 0)
+    qtd_mat = float(request.form['quantidade_material'] or 0)
+    
+    conn = get_db_connection()
+    conn.execute('''
+        INSERT INTO estrutura_produto (produto_id, maquina_id, material_id, tempo_processo_min, quantidade_material)
+        VALUES (?, ?, ?, ?, ?)
+    ''', (prod_id, maq_id, mat_id, tempo, qtd_mat))
+    conn.commit()
+    conn.close()
+    return redirect(url_for('engenharia'))
+
+@app.route('/deletar_item_estrutura/<int:id>', methods=['POST'])
+def deletar_item_estrutura(id):
+    conn = get_db_connection()
+    conn.execute('DELETE FROM estrutura_produto WHERE id=?', (id,))
+    conn.commit()
+    conn.close()
+    return redirect(url_for('engenharia'))
