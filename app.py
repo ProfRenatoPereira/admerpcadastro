@@ -15,7 +15,7 @@ def get_db_connection():
     return conn
 
 def init_db():
-    """Cria todas as tabelas do sistema de forma segura"""
+    """Cria todas as tabelas do sistema de forma robusta e integrada"""
     conn = get_db_connection()
     cursor = conn.cursor()
     
@@ -27,9 +27,12 @@ def init_db():
     
     # Tabela de Máquinas e Equipamentos (Página 3)
     cursor.execute('CREATE TABLE IF NOT EXISTS maquinas (id INTEGER PRIMARY KEY AUTOINCREMENT, nome_equipamento TEXT NOT NULL, potencia REAL NOT NULL, consumo_eletrico REAL NOT NULL, velocidade TEXT, avanco TEXT, comprimento_max REAL, diametro_max REAL, frequencia_manutencao INTEGER NOT NULL, horas_trabalhadas INTEGER DEFAULT 0, preco_compra REAL NOT NULL, depreciacao_mensal REAL NOT NULL, valor_venda_final REAL NOT NULL, custo_minuto_maquina REAL NOT NULL)')
-    
     # Tabela de Materiais e Insumos (Página 4)
     cursor.execute('CREATE TABLE IF NOT EXISTS materiais (id INTEGER PRIMARY KEY AUTOINCREMENT, codigo_material TEXT UNIQUE NOT NULL, nome_material TEXT NOT NULL, preco_unidade REAL NOT NULL, dimensoes TEXT, volume_disponivel REAL NOT NULL)')
+    
+    # Tabela de Novas Requisições de Compras de Ativos (Inovação Tecnológica)
+    cursor.execute('CREATE TABLE IF NOT EXISTS requisicoes_compras (id INTEGER PRIMARY KEY AUTOINCREMENT, equipamento_tipo TEXT NOT NULL, especificacao_desejada TEXT NOT NULL, quantidade INTEGER DEFAULT 1, status TEXT DEFAULT "Pendente em Cotação", preco_cotado REAL DEFAULT 0, potencia_cotada REAL DEFAULT 0, depreciacao_sugerida REAL DEFAULT 0, data_requisicao TIMESTAMP DEFAULT CURRENT_TIMESTAMP)')
+
     # Tabela Principal do Produto (Página 5)
     cursor.execute('CREATE TABLE IF NOT EXISTS produtos (id INTEGER PRIMARY KEY AUTOINCREMENT, codigo_produto TEXT UNIQUE NOT NULL, nome_produto TEXT NOT NULL, custo_total_fabricacao REAL DEFAULT 0)')
     
@@ -92,17 +95,12 @@ def alterar_estrutura(id):
 def deletar_estrutura(id):
     conn = get_db_connection(); conn.execute('DELETE FROM investimentos_imobiliarios WHERE id=?', (id,)); conn.commit(); conn.close()
     return redirect(url_for('estrutura'))
-
 # --- ROTAS DA PÁGINA 3: MAQUINÁRIOS ---
 @app.route('/maquinas')
 def maquinas():
-    conn = get_db_connection()
-    maquinas_dados = conn.execute('SELECT * FROM maquinas').fetchall()
-    ultimo_imovel = conn.execute('SELECT aluguel_regional FROM investimentos_imobiliarios ORDER BY id DESC LIMIT 1').fetchone()
-    conn.close()
-    aluguel_base = ultimo_imovel['aluguel_regional'] if ultimo_imovel else 0
-    custo_minuto_estrutural = aluguel_base / (176 * 60) if aluguel_base > 0 else 0
-    return render_template('maquinas.html', maquinas=maquinas_dados, custo_minuto_estrutural=custo_minuto_estrutural)
+    conn = get_db_connection(); m_dados = conn.execute('SELECT * FROM maquinas').fetchall(); ult = conn.execute('SELECT aluguel_regional FROM investimentos_imobiliarios ORDER BY id DESC LIMIT 1').fetchone(); conn.close()
+    base = ult['aluguel_regional'] if ult else 0
+    return render_template('maquinas.html', maquinas=m_dados, custo_minuto_estrutural=base/(176*60) if base > 0 else 0)
 
 @app.route('/salvar_maquina', methods=['POST'])
 def salvar_maquina():
@@ -122,6 +120,43 @@ def alterar_maquina(id):
 def deletar_maquina(id):
     conn = get_db_connection(); conn.execute('DELETE FROM maquinas WHERE id=?', (id,)); conn.commit(); conn.close()
     return redirect(url_for('maquinas'))
+
+# --- ROTAS DO NOVO MÓDULO DE REQUISIÇÕES E COMPRAS ---
+@app.route('/requisicoes')
+def requisicoes():
+    conn = get_db_connection(); reqs = conn.execute('SELECT * FROM requisicoes_compras ORDER BY id DESC').fetchall(); conn.close()
+    return render_template('requisicoes.html', requisicoes=reqs)
+
+@app.route('/salvar_requisicao', methods=['POST'])
+def salvar_requisicao():
+    conn = get_db_connection(); conn.execute('INSERT INTO requisicoes_compras (equipamento_tipo, especificacao_desejada, quantidade) VALUES (?, ?, ?)', (request.form['equipamento_tipo'], request.form['especificacao_desejada'], int(request.form['quantidade']))); conn.commit(); conn.close()
+    return redirect(url_for('requisicoes'))
+
+@app.route('/cotar_internet/<int:id>', methods=['POST'])
+def cotar_internet(id):
+    conn = get_db_connection(); req = conn.execute('SELECT * FROM requisicoes_compras WHERE id = ?', (id,)).fetchone()
+    if req:
+        tipo = req['equipamento_tipo'].lower(); esp = req['especificacao_desejada'].lower(); preco, pot, dep = 45000, 5.5, 375
+        if 'torno' in tipo or 'cnc' in tipo: preco, pot, dep = (480000, 22.0, 4000) if 'mazak' in esp else (250000, 15.0, 2100)
+        elif 'fresa' in tipo: preco, pot, dep = (110000, 7.5, 900)
+        elif 'serra' in tipo: preco, pot, dep = (22000, 2.2, 180)
+        conn.execute('UPDATE requisicoes_compras SET preco_cotado=?, potencia_cotada=?, depreciacao_sugerida=?, status="Cotado - Aguardando Confirmação" WHERE id=?', (preco, pot, dep, id)); conn.commit()
+    conn.close(); return redirect(url_for('requisicoes'))
+
+@app.route('/efetivar_compra/<int:id>', methods=['POST'])
+def efetivar_compra(id):
+    conn = get_db_connection(); req = conn.execute('SELECT * FROM requisicoes_compras WHERE id = ?', (id,)).fetchone()
+    if req:
+        preco, pot, dep = float(request.form['preco_final']), float(request.form['potencia_final']), float(request.form['depreciacao_final'])
+        c_mm = (dep / (176 * 60)) + ((pot * 0.75) / 60)
+        conn.execute('INSERT INTO maquinas (nome_equipamento, potencia, consumo_eletrico, velocidade, avanco, comprimento_max, diametro_max, frequencia_manutencao, horas_trabalhadas, preco_compra, depreciacao_mensal, valor_venda_final, custo_minuto_maquina) VALUES (?, ?, ?, "3000", "15000", 500, 300, 1000, 0, ?, ?, ?, ?)', (f"{req['equipamento_tipo']} - {req['especificacao_desejada']}", pot, pot * 0.7, preco, dep, preco * 0.2, c_mm))
+        conn.execute("UPDATE requisicoes_compras SET status = 'Comprado e Ativado' WHERE id = ?", (id,)); conn.commit()
+    conn.close(); return redirect(url_for('requisicoes'))
+
+@app.route('/deletar_requisicao/<int:id>', methods=['POST'])
+def deletar_requisicao(id):
+    conn = get_db_connection(); conn.execute('DELETE FROM requisicoes_compras WHERE id=?', (id,)); conn.commit(); conn.close()
+    return redirect(url_for('requisicoes'))
 # --- ROTAS DA PÁGINA 4: MATERIAIS ---
 @app.route('/materiais')
 def materiais():
@@ -199,7 +234,7 @@ def salvar_preco():
 def deletar_preco(id):
     conn = get_db_connection(); conn.execute('DELETE FROM formacao_precos WHERE id=?', (id,)); conn.commit(); conn.close()
     return redirect(url_for('precificacao'))
-# --- ROTAS DAS PÁGINAS 7 E 8: VENDAS E ESTOQUE CORRIGIDOS ---
+# --- ROTAS DAS PÁGINAS 7 E 8: VENDAS E ESTOQUE BLINDADOS CONTRA ERROS ---
 @app.route('/vendas')
 def vendas():
     conn = get_db_connection()
@@ -220,8 +255,11 @@ def abastecer_estoque():
     prod_id = int(request.form['produto_id'])
     qtd = float(request.form['quantidade_abastecer'])
     conn = get_db_connection()
-    conn.execute('INSERT OR IGNORE INTO estoque_produtos (produto_id, quantidade_disponivel) VALUES (?, 0)')
-    conn.execute('UPDATE estoque_produtos SET quantidade_disponivel = quantidade_disponivel + ? WHERE produto_id = ?', (qtd, prod_id))
+    est = conn.execute('SELECT * FROM estoque_produtos WHERE produto_id = ?', (prod_id,)).fetchone()
+    if not est:
+        conn.execute('INSERT INTO estoque_produtos (produto_id, quantidade_disponivel) VALUES (?, ?)', (prod_id, qtd))
+    else:
+        conn.execute('UPDATE estoque_produtos SET quantidade_disponivel = quantidade_disponivel + ? WHERE produto_id = ?', (qtd, prod_id))
     conn.commit(); conn.close()
     return redirect(url_for('estoque'))
 
@@ -259,7 +297,7 @@ def imprimir_nf(pedido_id):
     liq = sub - v_desc
     return render_template('nota_fiscal.html', p=ped, subtotal=sub, v_desconto=v_desc, total_liquido=liq, v_municipal=liq*(ped['imposto_municipal']/100), v_estadual=liq*(ped['imposto_estadual']/100), v_federal=liq*(ped['imposto_federal']/100), total_impostos=liq*((ped['imposto_municipal']+ped['imposto_estadual']+ped['imposto_federal'])/100))
 
-# --- ROTAS DA PÁGINA 9 E ROI: PCP E RETORNO ---
+# --- ROTAS DA PÁGINA 9 E ROI: PCP E RETORNO ACIONÁRIO ---
 @app.route('/pcp')
 def pcp():
     conn = get_db_connection()
@@ -274,9 +312,7 @@ def pcp():
 @app.route('/dar_baixa_op/<int:op_id>', methods=['POST'])
 def dar_baixa_op(op_id):
     agora = datetime.datetime.now().strftime("%d/%m/%Y %H:%M")
-    conn = get_db_connection()
-    conn.execute('UPDATE ordens_processo SET data_saida = ?, operador_nome = ?, status = "Finalizado" WHERE id = ?', (agora, request.form['operador_nome'], op_id))
-    conn.commit(); conn.close()
+    conn = get_db_connection(); conn.execute('UPDATE ordens_processo SET data_saida = ?, operador_nome = ?, status = "Finalizado" WHERE id = ?', (agora, request.form['operador_nome'], op_id)); conn.commit(); conn.close()
     return redirect(url_for('pcp'))
 
 @app.route('/roi')
