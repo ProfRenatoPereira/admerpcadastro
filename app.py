@@ -98,6 +98,23 @@ DATABASE = 'database.db'
         )
     ''')
 
+    # Tabela do Sequenciamento de Produção do PCP (Página 9)
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS ordens_processo (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            pedido_id INTEGER NOT NULL,
+            numero_operacao TEXT NOT NULL,
+            maquina_nome TEXT NOT NULL,
+            codigo_produto TEXT NOT NULL,
+            nome_produto TEXT NOT NULL,
+            data_entrada TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            tempo_estimado_min REAL NOT NULL,
+            data_saida TEXT DEFAULT 'Aguardando',
+            operador_nome TEXT DEFAULT 'Pendente',
+            status TEXT DEFAULT 'Na Fila',
+            FOREIGN KEY(pedido_id) REFERENCES pedidos_vendas(id)
+        )
+    ''')
 
 
 
@@ -573,3 +590,82 @@ def imprimir_nf(pedido_id):
     return render_template('nota_fiscal.html', p=pedido, subtotal=subtotal, v_desconto=v_desconto, 
                            total_liquido=total_liquido, v_municipal=v_municipal, v_estadual=v_estadual, 
                            v_federal=v_federal, total_impostos=total_impostos)
+# --- ROTAS DA PÁGINA 9 E ROI: PCP E RETORNO DOS ACIONISTAS ---
+@app.route('/pcp')
+def pcp():
+    conn = get_db_connection()
+    # Verifica se há novas vendas faturadas que precisam entrar na fila do PCP
+    novas_vendas = conn.execute('''
+        SELECT pv.id AS pedido_id, pv.quantidade, p.codigo_produto, p.nome_produto, p.id AS prod_id
+        FROM pedidos_vendas pv
+        JOIN produtos p ON pv.produto_id = p.id
+        WHERE pv.id NOT IN (SELECT DISTINCT pedido_id FROM ordens_processo)
+    ''').fetchall()
+    
+    # Se houver novas vendas, gera automaticamente o roteiro no PCP baseado na Engenharia (BOM)
+    for venda in novas_vendas:
+        roteiros = conn.execute('''
+            SELECT ep.*, m.nome_equipamento 
+            FROM estrutura_produto ep
+            LEFT JOIN maquinas m ON ep.maquina_id = m.id
+            WHERE ep.produto_id = ?
+        ''', (venda['prod_id'],)).fetchall()
+        
+        for idx, rot in enumerate(roteiros):
+            tempo_total_lote = rot['tempo_processo_min'] * venda['quantidade']
+            conn.execute('''
+                INSERT INTO ordens_processo (pedido_id, numero_operacao, maquina_nome, codigo_produto, nome_produto, tempo_estimado_min)
+                VALUES (?, ?, ?, ?, ?, ?)
+            ''', (venda['pedido_id'], f"OP { (idx+1)*10 }", rot['nome_equipamento'] or 'Bancada Manual', 
+                  venda['codigo_produto'], venda['nome_produto'], tempo_total_lote))
+            
+            # Alimenta o estoque de acabados inicialmente se não existir registro para o produto
+            conn.execute('INSERT OR IGNORE INTO estoque_produtos (produto_id, quantidade_disponivel) VALUES (?, 0)', (venda['prod_id'],))
+            # O abastecimento do estoque ocorre quando a produção finaliza (simulado pedagogicamente na rota dar_baixa)
+            conn.execute('UPDATE estoque_produtos SET quantidade_disponivel = quantidade_disponivel + ? WHERE produto_id = ?', (venda['quantidade'], venda['prod_id']))
+            
+    conn.commit()
+    ordens = conn.execute('SELECT * FROM ordens_processo ORDER BY id ASC').fetchall()
+    conn.close()
+    return render_template('pcp.html', ordens=ordens)
+
+@app.route('/dar_baixa_op/<int:op_id>', methods=['POST'])
+def dar_baixa_op(op_id):
+    operador = request.form['operador_nome']
+    import datetime
+    data_agora = datetime.datetime.now().strftime("%d/%m/%Y %H:%M")
+    
+    conn = get_db_connection()
+    conn.execute('''
+        UPDATE ordens_processo 
+        SET data_saida = ?, operador_nome = ?, status = 'Finalizado'
+        WHERE id = ?
+    ''', (data_agora, operador, op_id))
+    conn.commit()
+    conn.close()
+    return redirect(url_for('pcp'))
+
+@app.route('/roi')
+def roi():
+    conn = get_db_connection()
+    # Soma de todo o faturamento líquido (preço final com descontos)
+    vendas_dados = conn.execute('''
+        SELECT SUM((fp.preco_venda_final * pv.quantidade) * (1 - pv.desconto_percentual/100)) AS receita_bruta,
+               SUM(pv.quantidade) AS total_pecas
+        FROM pedidos_vendas pv
+        JOIN formacao_precos fp ON pv.produto_id = fp.produto_id
+    ''').fetchone()
+    
+    # Soma de investimentos iniciais da página 2
+    investimentos = conn.execute('SELECT SUM(valor_terreno + valor_instalacoes) AS cap_imobilizado FROM investimentos_imobiliarios').fetchone()
+    conn.close()
+    
+    receita = vendas_dados['receita_bruta'] if vendas_dados and vendas_dados['receita_bruta'] else 0
+    pecas = vendas_dados['total_pecas'] if vendas_dados and vendas_dados['total_pecas'] else 0
+    capital = investimentos['cap_imobilizado'] if investimentos and investimentos['cap_imobilizado'] else 0
+    
+    # Pedagogia: O lucro repassado aos acionistas é simulado em cima do ritmo operacional
+    lucro_acionistas = receita * 0.15 # 15% de margem líquida direta distribuída
+    payback_real = (capital / lucro_acionistas) if lucro_acionistas > 0 else 0
+    
+    return render_template('roi.html', receita=receita, pecas=pecas, capital=capital, lucro_acionistas=lucro_acionistas, payback_real=payback_real)
