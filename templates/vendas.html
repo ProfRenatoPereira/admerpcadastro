@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <title>Painel de Vendas Comerciais</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <div class="container">
+        <h2>Página 7: Departamento Comercial - Painel de Vendas</h2>
+        
+        <div style="background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.1);">
+            <form action="/lancar_venda" method="POST">
+                <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 15px;">
+                    <div class="form-group">
+                        <label>Produto Comercializável:</label>
+                        <select name="produto_id" required style="width:100%; padding:10px; border-radius:4px;">
+                            <option value="">-- Selecione --</option>
+                            {% for prod in produtos %}
+                            <option value="{{ prod.id }}">
+                                {{ prod.codigo_produto }} - {{ prod.nome_produto }} (Preço: R$ {{ "%.2f"|format(prod.preco_venda_final) }} | Estoque: {{ prod.estoque_atual }})
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Quantidade:</label>
+                        <input type="number" name="quantidade" required min="1" value="1">
+                    </div>
+                    <div class="form-group">
+                        <label>Desconto Adicional (%):</label>
+                        <input type="number" step="0.1" name="desconto_percentual" min="0" max="100" value="0">
+                    </div>
+                    <div class="form-group">
+                        <label>Observações da NF:</label>
+                        <input type="text" name="observacoes" placeholder="Ex: Isenção parcial conf. Artigo X">
+                    </div>
+                </div>
+                <div style="margin-top: 15px;">
+                    <button type="submit" class="btn btn-success">⚙️ Processar Faturamento e Enviar ao PCP</button>
+                </div>
+            </form>
+        </div>
+
+        <h3>Pedidos Faturados</h3>
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th>OS / ID</th>
+                    <th>Produto</th>
+                    <th>Quantidade</th>
+                    <th>Desconto</th>
+                    <th>Ações Disponíveis</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for ped in pedidos %}
+                <tr>
+                    <td><code>NF-{{ ped.id }}</code></td>
+                    <td><strong>{{ ped.nome_produto }}</strong></td>
+                    <td>{{ ped.quantidade }} un</td>
+                    <td>{{ ped.desconto_percentual }}%</td>
+                    <td>
+                        <a href="/imprimir_nf/{{ ped.id }}" target="_blank" class="btn btn-success" style="text-decoration:none; display:inline-block; font-size:13px;">🖨️ Imprimir NF</a>
+                        <form action="/deletar_venda/{{ ped.id }}" method="POST" style="display:inline;" onsubmit="return confirm('Deseja estornar esta venda e devolver os itens ao estoque?');">
+                            <button type="submit" class="btn btn-danger" style="padding:5px 10px;">❌ Cancelar</button>
+                        </form>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</body>
+</html>
