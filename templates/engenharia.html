@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <title>Engenharia de Produto - BOM</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <div class="container">
+        <h2>Página 5: Engenharia de Produto (Estrutura e Roteiros - BOM)</h2>
+        
+        <div style="display: grid; grid-template-columns: 1fr 2fr; gap: 20px;">
+            <!-- Bloco Esquerdo: Criar o Produto (Master) -->
+            <div style="background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.1);">
+                <h3>1. Registrar Novo Produto</h3>
+                <form action="/salvar_produto" method="POST">
+                    <div class="form-group">
+                        <label>Código do Produto:</label>
+                        <input type="text" name="codigo_produto" required placeholder="Ex: PROD-EIXO-01">
+                    </div>
+                    <div class="form-group">
+                        <label>Nome Comercial:</label>
+                        <input type="text" name="nome_produto" required placeholder="Ex: Eixo de Transmissão Zincado">
+                    </div>
+                    <button type="submit" class="btn btn-success" style="width: 100%;">Criar Produto Base</button>
+                </form>
+            </div>
+
+            <!-- Bloco Direito: Vincular Roteiro e Componentes -->
+            <div style="background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.1);">
+                <h3>2. Compor Árvore e Roteiro de Fabricação</h3>
+                <form action="/vincular_estrutura" method="POST">
+                    <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 15px;">
+                        <div class="form-group">
+                            <label>Selecionar o Produto Base:</label>
+                            <select name="produto_id" required style="width:100%; padding:10px; border-radius:4px;">
+                                <option value="">-- Escolha o Produto --</option>
+                                {% for prod in produtos %}
+                                <option value="{{ prod.id }}">{{ prod.codigo_produto }} - {{ prod.nome_produto }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>Adicionar Operação / Máquina:</label>
+                            <select name="maquina_id" style="width:100%; padding:10px; border-radius:4px;">
+                                <option value="">-- Nenhuma (Apenas Material) --</option>
+                                {% for maq in maquinas %}
+                                <option value="{{ maq.id }}">{{ maq.nome_equipamento }} (R$ {{ maq.custo_minuto_maquina }}/min)</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>Tempo Estimado da Operação (Minutos):</label>
+                            <input type="number" step="0.01" name="tempo_processo_min" value="0">
+                        </div>
+                        <div class="form-group">
+                            <label>Adicionar Material / Insumo:</label>
+                            <select name="material_id" style="width:100%; padding:10px; border-radius:4px;">
+                                <option value="">-- Nenhum (Apenas Operação) --</option>
+                                {% for mat in materiais %}
+                                <option value="{{ mat.id }}">{{ mat.nome_material }} (R$ {{ mat.preco_unidade }}/un)</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>Qtd / Peso Gasto de Material:</label>
+                            <input type="number" step="0.01" name="quantidade_material" value="0">
+                        </div>
+                    </div>
+                    <div style="margin-top: 15px;">
+                        <button type="submit" class="btn btn-primary" style="width: 100%;">⚙️ Inserir Elemento na Ficha Técnica</button>
+                    </div>
+                </form>
+            </div>
+        </div>
