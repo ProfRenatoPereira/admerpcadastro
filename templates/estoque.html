@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <title>Gestão de Estoque Acabados</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <div class="container">
+        <h2>Página 8: Logística - Inventário de Produtos Acabados</h2>
+        
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th>Código de Fábrica</th>
+                    <th>Nome do Produto Acabado</th>
+                    <th>Saldo Físico Disponível</th>
+                    <th>Status de Suprimentos</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for item in estoque_itens %}
+                <tr>
+                    <td><code>{{ item.codigo_produto }}</code></td>
+                    <td><strong>{{ item.nome_produto }}</strong></td>
+                    <td><strong style="color: var(--primary-color); font-size: 16px;">{{ item.quantidade_disponivel }} un</strong></td>
+                    <td>
+                        {% if item.quantidade_disponivel <= 5 %}
+                            <span style="background:#fce4d6; color:#c65911; padding:4px 8px; border-radius:4px; font-weight:bold;">⚠️ ESTOQUE CRÍTICO (PCP AGUARDANDO)</span>
+                        {% else %}
+                            <span style="background:#e2efda; color:#375623; padding:4px 8px; border-radius:4px; font-weight:bold;">🟢 Nível Seguro</span>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</body>
+</html>
