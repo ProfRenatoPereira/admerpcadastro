@@ -25,6 +25,18 @@ DATABASE = 'database.db'
             custo_minuto_maquina REAL NOT NULL
         )
     ''')
+    # Tabela de Materiais e Insumos (Página 4)
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS materiais (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            codigo_material TEXT UNIQUE NOT NULL,
+            nome_material TEXT NOT NULL,
+            preco_unidade REAL NOT NULL,
+            dimensoes TEXT,
+            volume_disponivel REAL NOT NULL
+        )
+    ''')
+
 
 def get_db_connection():
     conn = sqlite3.connect(DATABASE)
@@ -235,3 +247,59 @@ def deletar_maquina(id):
     conn.commit()
     conn.close()
     return redirect(url_for('maquinas'))
+
+
+# --- ROTAS DA PÁGINA 4: CADASTRO DE MATERIAIS E INSUMOS ---
+@app.route('/materiais')
+def materiais():
+    conn = get_db_connection()
+    materiais = conn.execute('SELECT * FROM materiais').fetchall()
+    conn.close()
+    return render_template('materiais.html', materiais=materiais)
+
+@app.route('/salvar_material', methods=['POST'])
+def salvar_material():
+    codigo = request.form['codigo_material']
+    nome = request.form['nome_material']
+    preco = float(request.form['preco_unidade'])
+    dimensoes = request.form['dimensoes']
+    volume = float(request.form['volume_disponivel'])
+    
+    try:
+        conn = get_db_connection()
+        conn.execute('''
+            INSERT INTO materiais (codigo_material, nome_material, preco_unidade, dimensoes, volume_disponivel)
+            VALUES (?, ?, ?, ?, ?)
+        ''', (codigo, nome, preco, dimensoes, volume))
+        conn.commit()
+        conn.close()
+    except sqlite3.IntegrityError:
+        return "Erro: Já existe um material cadastrado com este código."
+    return redirect(url_for('materiais'))
+
+
+@app.route('/alterar_material/<int:id>', methods=['POST'])
+def alterar_material(id):
+    codigo = request.form['codigo_material']
+    nome = request.form['nome_material']
+    preco = float(request.form['preco_unidade'])
+    dimensoes = request.form['dimensoes']
+    volume = float(request.form['volume_disponivel'])
+    
+    conn = get_db_connection()
+    conn.execute('''
+        UPDATE materiais 
+        SET codigo_material=?, nome_material=?, preco_unidade=?, dimensoes=?, volume_disponivel=?
+        WHERE id=?
+    ''', (codigo, nome, preco, dimensoes, volume, id))
+    conn.commit()
+    conn.close()
+    return redirect(url_for('materiais'))
+
+@app.route('/deletar_material/<int:id>', methods=['POST'])
+def deletar_material(id):
+    conn = get_db_connection()
+    conn.execute('DELETE FROM materiais WHERE id=?', (id,))
+    conn.commit()
+    conn.close()
+    return redirect(url_for('materiais'))
