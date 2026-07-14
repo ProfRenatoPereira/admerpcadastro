@@ -109,5 +109,35 @@
             <p style="font-size: 12px; color: #7f8c8d;">*Métricas calculadas dinamicamente usando markup interno e amortização linear contábil.</p>
         </div>
     </div>
+
+    <script>
+    // Função para abrir e fechar o menu hambúrguer no celular
+    function alternarMenuMobile() {
+        const menu = document.getElementById('menuNavegacao');
+        menu.classList.toggle('ativo');
+    }
+
+    // Controle do tamanho das fontes para as Big TVs ou baixa visão
+    let tamanhoAtual = 100;
+    function mudarFonte(direcao) {
+        tamanhoAtual += (direcao * 10);
+        if(tamanhoAtual >= 70 && tamanhoAtual <= 160) {
+            document.body.style.fontSize = tamanhoAtual + "%";
+        }
+    }
+
+    // Controle do modo de alto contraste
+    function alternarAltoContraste() {
+        const corpo = document.body;
+        if (corpo.style.filter === "invert(1) contrast(1.2)") {
+            corpo.style.filter = "none";
+            corpo.style.backgroundColor = "";
+        } else {
+            corpo.style.filter = "invert(1) contrast(1.2)";
+            corpo.style.backgroundColor = "black";
+        }
+    }
+</script>
+
 </body>
 </html>
