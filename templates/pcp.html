@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <title>Planejamento e Controle de Processos</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <div class="container">
+        <h2>Página 9: Chão de Fábrica - Planilha Operacional de Roteiros (PCP)</h2>
+        
+        <h3>Fila de Produção e Ordens de Serviço Ativas</h3>
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th>OS (Pedido)</th>
+                    <th>Nº Operação</th>
+                    <th>Posto / Máquina</th>
+                    <th>Produto / Lote</th>
+                    <th>Entrada</th>
+                    <th>Tempo do Lote (Min)</th>
+                    <th>Saída (Fim)</th>
+                    <th>Operador</th>
+                    <th>Status</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for ord in ordens %}
+                <tr style="background-color: {% if ord.status == 'Finalizado' %}#e2efda{% else %}#ffffff{% endif %};">
+                    <td><code>OS-00{{ ord.pedido_id }}</code></td>
+                    <td><strong>{{ ord.numero_operacao }}</strong></td>
+                    <td>⚙️ {{ ord.maquina_name }}</td>
+                    <td><code>{{ ord.codigo_produto }}</code> - {{ ord.nome_produto }}</td>
+                    <td><small>{{ ord.data_entrada }}</small></td>
+                    <td>{{ "%.1f"|format(ord.tempo_estimado_min) }} min</td>
+                    <td>{{ ord.data_saida }}</td>
+                    <td><strong>{{ ord.operador_nome }}</strong></td>
+                    <td>
+                        {% if ord.status == 'Na Fila' %}
+                        <form action="/dar_baixa_op//{{ ord.id }}" method="POST" style="display: flex; gap: 5px; align-items: center;">
+                            <input type="text" name="operador_nome" required placeholder="Nome Operador" style="padding: 5px; font-size: 12px; width: 110px;">
+                            <button type="submit" class="btn btn-success" style="padding: 5px 8px; font-size: 11px;">🏁 Concluir</button>
+                        </form>
+                        {% else %}
+                            <span style="color:#375623; font-weight:bold;">✔ Concluído</span>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</body>
+</html>
