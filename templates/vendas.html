@@ -6,78 +6,71 @@
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 </head>
 <body>
-
-
-<!-- Barra de Acessibilidade Superior -->
-<div class="barra-acessibilidade">
-    <button class="btn-acessibilidade" onclick="alternarAltoContraste()">Acessibilidade 🌓 Alto Contraste</button>
-    <button class="btn-acessibilidade" onclick="mudarFonte(1)">A+</button>
-    <button class="btn-acessibilidade" onclick="mudarFonte(-1)">A-</button>
-</div>
-
-<!-- Cabeçalho Principal Terceiro ADM Associados -->
-<header class="cabecalho-corporativo">
-    <div class="identidade-container">
-        <div class="branding-flex">
-            <!-- Logo oficial do repositório -->
-            <img src="{{ url_for('static', filename='logo.png') }}" alt="Logo TERADMAS" style="height: 65px; width: auto; object-fit: contain; border-radius: 4px;">
-            <div class="texto-empresa">
-                <h1>TERCEIRO ADM ASSOCIADOS</h1>
-                <p>Projetos, Execução, Assessoria, Auditoria e Gerenciamento Operacional e de Custos</p>
-            </div>
-        </div>
-        <!-- Botão Hambúrguer para Celular -->
-        <button class="menu-hamburguer" onclick="alternarMenuMobile()">☰</button>
+    <!-- Barra de Acessibilidade Superior -->
+    <div class="barra-acessibilidade">
+        <button class="btn-acessibilidade" onclick="alternarAltoContraste()">Acessibilidade 🌓 Alto Contraste</button>
+        <button class="btn-acessibilidade" onclick="mudarFonte(1)">A+</button>
+        <button class="btn-acessibilidade" onclick="mudarFonte(-1)">A-</button>
     </div>
 
-    <!-- Navegação Responsiva com Menus Dropdown -->
-    <nav class="nav-container" id="menuNavegacao">
-        <ul class="menu-cascata">
-            <li class="item-menu">
-                <a href="#" class="link-principal">🏢 Módulos Iniciais ▾</a>
-                <ul class="sub-menu">
-                    <li><a href="/estrutura">1. Investimentos Imobiliários</a></li>
-                    <li><a href="/maquinas">2. Engenharia de Ativos (Máquinas)</a></li>
-                    <li><a href="/materiais">3. Almoxarifado (Materiais)</a></li>
-                </ul>
-            </li>
-            <li class="item-menu">
-                <a href="#" class="link-principal">🛠️ Custos & Engenharia ▾</a>
-                <ul class="sub-menu">
-                    <li><a href="/engenharia">4. Engenharia de Produto (BOM)</a></li>
-                    <li><a href="/precificacao">5. Controladoria e Precificação</a></li>
-                </ul>
-            </li>
-            <li class="item-menu">
-                <a href="#" class="link-principal">💰 Operações Comerciais ▾</a>
-                <ul class="sub-menu">
-                    <li><a href="/vendas">6. Painel de Vendas Comerciais</a></li>
-                    <li><a href="/estoque">7. Inventário de Acabados</a></li>
-                </ul>
-            </li>
-            <li class="item-menu">
-                <a href="#" class="link-principal">🏭 Chão de Fábrica & ROI ▾</a>
-                <ul class="sub-menu">
-                    <li><a href="/pcp">8. Planilha de Processos (PCP)</a></li>
-                    <li><a href="/roi">9. Indicadores de Retorno (ROI)</a></li>
-                </ul>
-            </li>
-        </ul>
-    </nav>
-</header>
+    <!-- Cabeçalho Principal Terceiro ADM Associados -->
+    <header class="cabecalho-corporativo">
+        <div class="identidade-container">
+            <div class="branding-flex">
+                <img src="{{ url_for('static', filename='logo.png') }}" alt="Logo TERADMAS" style="height: 65px; width: auto; object-fit: contain; border-radius: 4px;">
+                <div class="texto-empresa">
+                    <h1>TERCEIRO ADM ASSOCIADOS</h1>
+                    <p>Projetos, Execução, Assessoria, Auditoria e Gerenciamento Operacional e de Custos</p>
+                </div>
+            </div>
+            <button class="menu-hamburguer" onclick="alternarMenuMobile()">☰</button>
+        </div>
 
-
-
-    
+        <!-- Navegação Responsiva com Menus Dropdown -->
+        <nav class="nav-container" id="menuNavegacao">
+            <ul class="menu-cascata">
+                <li class="item-menu">
+                    <a href="#" class="link-principal">🏢 Módulos Iniciais ▾</a>
+                    <ul class="sub-menu">
+                        <li><a href="/estrutura">1. Investimentos Imobiliários</a></li>
+                        <li><a href="/maquinas">2. Engenharia de Ativos (Máquinas)</a></li>
+                        <li><a href="/materiais">3. Almoxarifado (Materiais)</a></li>
+                    </ul>
+                </li>
+                <li class="item-menu">
+                    <a href="#" class="link-principal">🛠️ Custos & Engenharia ▾</a>
+                    <ul class="sub-menu">
+                        <li><a href="/engenharia">4. Engenharia de Produto (BOM)</a></li>
+                        <li><a href="/precificacao">5. Controladoria e Precificação</a></li>
+                    </ul>
+                </li>
+                <li class="item-menu">
+                    <a href="#" class="link-principal">💰 Operações Comerciais ▾</a>
+                    <ul class="sub-menu">
+                        <li><a href="/vendas">6. Painel de Vendas Comerciais</a></li>
+                        <li><a href="/estoque">7. Inventário de Acabados</a></li>
+                    </ul>
+                </li>
+                <li class="item-menu">
+                    <a href="#" class="link-principal">🏭 Chão de Fábrica & ROI ▾</a>
+                    <ul class="sub-menu">
+                        <li><a href="/pcp">8. Planilha de Processos (PCP)</a></li>
+                        <li><a href="/roi">9. Indicadores de Retorno (ROI)</a></li>
+                    </ul>
+                </li>
+            </ul>
+        </nav>
+    </header>
     <div class="container">
         <h2>Página 7: Departamento Comercial - Painel de Vendas</h2>
         
+        <!-- Formulário Corrigido com o termo 'quantidade' -->
         <div style="background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.1);">
             <form action="/lancar_venda" method="POST">
                 <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 15px;">
                     <div class="form-group">
                         <label>Produto Comercializável:</label>
-                        <select name="produto_id" required style="width:100%; padding:10px; border-radius:4px;">
+                        <select name="produto_id" required style="padding:10px; border-radius:4px;">
                             <option value="">-- Selecione --</option>
                             {% for prod in produtos %}
                             <option value="{{ prod.id }}">
@@ -125,7 +118,7 @@
                     <td>{{ ped.desconto_percentual }}%</td>
                     <td>
                         <a href="/imprimir_nf/{{ ped.id }}" target="_blank" class="btn btn-success" style="text-decoration:none; display:inline-block; font-size:13px;">🖨️ Imprimir NF</a>
-                        <form action="/deletar_venda/{{ ped.id }}" method="POST" style="display:inline;" onsubmit="return confirm('Deseja estornar esta venda e devolver os itens ao estoque?');">
+                        <form action="/deletar_venda/{{ ped.id }}" method="POST" style="display:inline;" onsubmit="return confirm('Deseja estornar esta venda?');">
                             <button type="submit" class="btn btn-danger" style="padding:5px 10px;">❌ Cancelar</button>
                         </form>
                     </td>
@@ -135,35 +128,24 @@
         </table>
     </div>
 
-
+    <!-- SCRIPTS COMPARTILHADOS DE INTELIGÊNCIA VISUAL -->
     <script>
-    // Função para abrir e fechar o menu hambúrguer no celular
-    function alternarMenuMobile() {
-        const menu = document.getElementById('menuNavegacao');
-        menu.classList.toggle('ativo');
-    }
-
-    // Controle do tamanho das fontes para as Big TVs ou baixa visão
-    let tamanhoAtual = 100;
-    function mudarFonte(direcao) {
-        tamanhoAtual += (direcao * 10);
-        if(tamanhoAtual >= 70 && tamanhoAtual <= 160) {
-            document.body.style.fontSize = tamanhoAtual + "%";
+        function alternarMenuMobile() {
+            const menu = document.getElementById('menuNavegacao');
+            menu.classList.toggle('ativo');
         }
-    }
 
-    // Controle do modo de alto contraste
-    function alternarAltoContraste() {
-        const corpo = document.body;
-        if (corpo.style.filter === "invert(1) contrast(1.2)") {
-            corpo.style.filter = "none";
-            corpo.style.backgroundColor = "";
-        } else {
-            corpo.style.filter = "invert(1) contrast(1.2)";
-            corpo.style.backgroundColor = "black";
+        let tamanhoAtual = 100;
+        function mudarFonte(direcao) {
+            tamanhoAtual += (direcao * 10);
+            if(tamanhoAtual >= 70 && tamanhoAtual <= 160) {
+                document.body.style.fontSize = tamanhoAtual + "%";
+            }
         }
-    }
-</script>
 
+        function alternarAltoContraste() {
+            document.body.classList.toggle('alto-contraste-ativo');
+        }
+    </script>
 </body>
 </html>
