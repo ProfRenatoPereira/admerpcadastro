@@ -6,6 +6,25 @@ app = Flask(__name__)
 app.secret_key = 'chave_secreta_pedagogica'
 
 DATABASE = 'database.db'
+    # Tabela de Máquinas e Equipamentos (Página 3)
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS maquinas (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            nome_equipamento TEXT NOT NULL,
+            potencia REAL NOT NULL,
+            consumo_eletrico REAL NOT NULL,
+            velocidade TEXT,
+            avanco TEXT,
+            comprimento_max REAL,
+            diametro_max REAL,
+            frequencia_manutencao INTEGER NOT NULL, -- em horas
+            horas_trabalhadas INTEGER DEFAULT 0,
+            preco_compra REAL NOT NULL,
+            depreciacao_mensal REAL NOT NULL,
+            valor_venda_final REAL NOT NULL,
+            custo_minuto_maquina REAL NOT NULL
+        )
+    ''')
 
 def get_db_connection():
     conn = sqlite3.connect(DATABASE)
@@ -136,3 +155,83 @@ def deletar_estrutura(id):
 
 if __name__ == '__main__':
     app.run(debug=True)
+
+
+# --- ROTAS DA PÁGINA 3: MAQUINÁRIOS E EQUIPAMENTOS ---
+@app.route('/maquinas')
+def maquinas():
+    conn = get_db_connection()
+    maquinas = conn.execute('SELECT * FROM maquinas').fetchall()
+    
+    # Busca o último aluguel diluído salvo para usar no cálculo do minuto máquina estrutural
+    # Se não houver registro, assume 0 como fallback pedagógico
+    ultimo_imovel = conn.execute('SELECT aluguel_regional FROM investimentos_imobiliarios ORDER BY id DESC LIMIT 1').fetchone()
+    conn.close()
+    
+    aluguel_base = ultimo_imovel['aluguel_regional'] if ultimo_imovel else 0
+    minutos_no_mes = 176 * 60
+    custo_minuto_estrutural = aluguel_base / minutos_no_mes if aluguel_base > 0 else 0
+    
+    return render_template('maquinas.html', maquinas=maquinas, custo_minuto_estrutural=custo_minuto_estrutural)
+
+@app.route('/salvar_maquina', methods=['POST'])
+def salvar_maquina():
+    nome = request.form['nome_equipamento']
+    potencia = float(request.form['potencia'])
+    consumo = float(request.form['consumo_eletrico'])
+    velocidade = request.form['velocidade']
+    avanco = request.form['avanco']
+    comp_max = float(request.form['comprimento_max'] or 0)
+    diam_max = float(request.form['diametro_max'] or 0)
+    manutencao = int(request.form['frequencia_manutencao'])
+    horas_trab = int(request.form['horas_trabalhadas'] or 0)
+    preco = float(request.form['preco_compra'])
+    depreciacao = float(request.form['depreciacao_mensal'])
+    venda = float(request.form['valor_venda_final'])
+    c_mm = float(request.form['custo_minuto_maquina'])
+    
+    conn = get_db_connection()
+    conn.execute('''
+        INSERT INTO maquinas (nome_equipamento, potencia, consumo_eletrico, velocidade, avanco, 
+                             comprimento_max, diametro_max, frequencia_manutencao, horas_trabalhadas,
+                             preco_compra, depreciacao_mensal, valor_venda_final, custo_minuto_maquina)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    ''', (nome, potencia, consumo, velocidade, avanco, comp_max, diam_max, manutencao, horas_trab, preco, depreciacao, venda, c_mm))
+    conn.commit()
+    conn.close()
+    return redirect(url_for('maquinas'))
+
+@app.route('/alterar_maquina/<int:id>', methods=['POST'])
+def alterar_maquina(id):
+    nome = request.form['nome_equipamento']
+    potencia = float(request.form['potencia'])
+    consumo = float(request.form['consumo_eletrico'])
+    velocidade = request.form['velocidade']
+    avanco = request.form['avanco']
+    comp_max = float(request.form['comprimento_max'] or 0)
+    diam_max = float(request.form['diametro_max'] or 0)
+    manutencao = int(request.form['frequencia_manutencao'])
+    horas_trab = int(request.form['horas_trabalhadas'] or 0)
+    preco = float(request.form['preco_compra'])
+    depreciacao = float(request.form['depreciacao_mensal'])
+    venda = float(request.form['valor_venda_final'])
+    c_mm = float(request.form['custo_minuto_maquina'])
+    
+    conn = get_db_connection()
+    conn.execute('''
+        UPDATE maquinas SET nome_equipamento=?, potencia=?, consumo_eletrico=?, velocidade=?, avanco=?, 
+                            comprimento_max=?, diametro_max=?, frequencia_manutencao=?, horas_trabalhadas=?,
+                            preco_compra=?, depreciacao_mensal=?, valor_venda_final=?, custo_minuto_maquina=?
+        WHERE id=?
+    ''', (nome, potencia, consumo, velocidade, avanco, comp_max, diam_max, manutencao, horas_trab, preco, depreciacao, venda, c_mm, id))
+    conn.commit()
+    conn.close()
+    return redirect(url_for('maquinas'))
+
+@app.route('/deletar_maquina/<int:id>', methods=['POST'])
+def deletar_maquina(id):
+    conn = get_db_connection()
+    conn.execute('DELETE FROM maquinas WHERE id=?', (id,))
+    conn.commit()
+    conn.close()
+    return redirect(url_for('maquinas'))
