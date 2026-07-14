@@ -73,3 +73,46 @@
                 </form>
             </div>
         </div>
+        <!-- Listagem das Árvores de Engenharia Atuais -->
+        <h3>Estruturas de Engenharia Ativas (Roteiros)</h3>
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th>Produto Destino</th>
+                    <th>Componente / Máquina Vinculada</th>
+                    <th>Tempo de Processo</th>
+                    <th>Material Consumido</th>
+                    <th>Ações</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for comp in composicoes %}
+                <tr>
+                    <td><code>{{ comp.codigo_produto }}</code> - <strong>{{ comp.nome_produto }}</strong></td>
+                    <td>
+                        {% if comp.nome_equipamento %}
+                            ⚙️ {{ comp.nome_equipamento }}
+                        {% else %}
+                            <span style="color:#7f8c8d;">Sem operação de máquina</span>
+                        {% endif %}
+                    </td>
+                    <td>{{ comp.tempo_processo_min }} minutos</td>
+                    <td>
+                        {% if comp.nome_material %}
+                            📦 {{ comp.nome_material }} (Qtd: {{ comp.quantidade_material }})
+                        {% else %}
+                            <span style="color:#7f8c8d;">Sem consumo de material</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        <form action="/deletar_item_estrutura/{{ comp.id }}" method="POST" onsubmit="return confirm('Remover este item da engenharia do produto?');">
+                            <button type="submit" class="btn btn-danger" style="padding: 5px 10px;">❌ Remover</button>
+                        </form>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</body>
+</html>
