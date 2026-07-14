@@ -13,12 +13,13 @@ def get_db_connection():
     conn = sqlite3.connect(DATABASE)
     conn.row_factory = sqlite3.Row
     return conn
+
 def init_db():
     """Cria as tabelas iniciais se elas não existirem"""
     conn = get_db_connection()
     cursor = conn.cursor()
     
-    # Tabela de Usuários (Página 1)
+    # Tabela de Usuários (Anulada no uso, mantida para não quebrar a estrutura)
     cursor.execute('''
         CREATE TABLE IF NOT EXISTS usuarios (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -155,36 +156,18 @@ def init_db():
 # Executa a criação do banco de dados se ele não existir
 if not os.path.exists(DATABASE):
     init_db()
-# --- ROTAS DA PÁGINA 1: LOGIN E ADMINISTRAÇÃO ---
+# --- ROTAS DE ACESSO DIRETO (SISTEMA DE SEGURANÇA ANULADO) ---
 @app.route('/')
 def index():
-    return render_template('login.html')
+    return redirect(url_for('estrutura'))
 
 @app.route('/login', methods=['POST'])
 def login():
-    usuario = request.form['usuario']
-    senha = request.form['senha']
-    conn = get_db_connection()
-    user = conn.execute('SELECT * FROM usuarios WHERE usuario = ? AND senha = ?', (usuario, senha)).fetchone()
-    conn.close()
-    if user:
-        if user['aprovado'] == 1 or user['usuario'] == 'admin':
-            return redirect(url_for('estrutura'))
-        return "Usuário aguardando aprovação do administrador/professor."
-    return "Usuário ou senha incorretos."
+    return redirect(url_for('estrutura'))
 
 @app.route('/cadastrar_usuario', methods=['POST'])
 def cadastrar_usuario():
-    usuario = request.form['usuario']
-    senha = request.form['senha']
-    try:
-        conn = get_db_connection()
-        conn.execute('INSERT INTO usuarios (usuario, presidential, aprovado) VALUES (?, ?, 0)', (usuario, senha))
-        conn.commit()
-        conn.close()
-        return "Cadastro realizado com sucesso! Aguarde a aprovação do professor."
-    except sqlite3.IntegrityError:
-        return "Este nome de usuário já existe."
+    return redirect(url_for('estrutura'))
 
 # --- ROTAS DA PÁGINA 2: INVESTIMENTOS IMOBILIÁRIOS ---
 @app.route('/estrutura')
@@ -403,7 +386,7 @@ def pcp():
         for idx, r in enumerate(rots):
             conn.execute('INSERT INTO ordens_processo (pedido_id, numero_operacao, maquina_nome, codigo_produto, nome_produto, tempo_estimado_min) VALUES (?, ?, ?, ?, ?, ?)', (v['pedido_id'], f"OP {(idx+1)*10}", r['nome_equipamento'] or 'Bancada Manual', v['codigo_produto'], v['nome_produto'], r['tempo_processo_min'] * v['quantidade']))
         conn.execute('INSERT OR IGNORE INTO estoque_produtos (produto_id, quantidade_disponivel) VALUES (?, 0)')
-        conn.execute('UPDATE estoque_produtos SET quantidade_disponivel = quantidade_disponivel + ? WHERE produto_id = ?', (v['quantidade'], v['prod_id']))
+        conn.execute('UPDATE estoque_produtos SET quantidade_disponivel = quantity_disponivel + ? WHERE produto_id = ?', (v['quantidade'], v['prod_id']))
     conn.commit()
     ords = conn.execute('SELECT * FROM ordens_processo ORDER BY id ASC').fetchall(); conn.close()
     return render_template('pcp.html', ordens=ords)
