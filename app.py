@@ -544,3 +544,32 @@ def deletar_venda(id):
     conn.commit()
     conn.close()
     return redirect(url_for('vendas'))
+@app.route('/imprimir_nf/<int:pedido_id>')
+def imprimir_nf(pedido_id):
+    conn = get_db_connection()
+    pedido = conn.execute('''
+        SELECT pv.*, p.codigo_produto, p.nome_produto, fp.preco_venda_final,
+               fp.imposto_municipal, fp.imposto_estadual, fp.imposto_federal
+        FROM pedidos_vendas pv
+        JOIN produtos p ON pv.produto_id = p.id
+        JOIN formacao_precos fp ON p.id = fp.produto_id
+        WHERE pv.id = ?
+    ''', (pedido_id,)).fetchone()
+    conn.close()
+    
+    if not pedido:
+        return "Nota Fiscal não encontrada."
+        
+    # Cálculos dinâmicos para exibição na NF
+    subtotal = pedido['preco_venda_final'] * pedido['quantidade']
+    v_desconto = subtotal * (pedido['desconto_percentual'] / 100)
+    total_liquido = subtotal - v_desconto
+    
+    v_municipal = total_liquido * (pedido['imposto_municipal'] / 100)
+    v_estadual = total_liquido * (pedido['imposto_estadual'] / 100)
+    v_federal = total_liquido * (pedido['imposto_federal'] / 100)
+    total_impostos = v_municipal + v_estadual + v_federal
+    
+    return render_template('nota_fiscal.html', p=pedido, subtotal=subtotal, v_desconto=v_desconto, 
+                           total_liquido=total_liquido, v_municipal=v_municipal, v_estadual=v_estadual, 
+                           v_federal=v_federal, total_impostos=total_impostos)
