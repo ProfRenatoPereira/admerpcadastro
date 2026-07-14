@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <title>Formação de Preços e Configuração Fiscal</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <div class="container">
+        <h2>Página 6: Controladoria - Formação de Preços & Configuração Fiscal</h2>
+        
+        <div style="background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.1);">
+            <form action="/salvar_preco" method="POST" id="formPreco">
+                <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px;">
+                    <div class="form-group">
+                        <label>Selecionar Produto:</label>
+                        <select name="produto_id" id="produto_id" required onchange="atualizarCustoBase()" style="width:100%; padding:10px; border-radius:4px;">
+                            <option value="">-- Escolha o Produto --</option>
+                            {% for prod in produtos %}
+                            <option value="{{ prod.id }}" data-custo="{{ prod.custo_fabricacao }}">{{ prod.codigo_produto }} - {{ prod.nome_produto }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Custo Base de Fabricação (R$):</label>
+                        <input type="number" id="custo_fabricacao_visivel" readonly value="0.00">
+                    </div>
+                    <div class="form-group">
+                        <label>Margem de Lucro Desejada (%):</label>
+                        <input type="number" step="0.1" name="margem_lucro" id="margem_lucro" required value="0" oninput="calcularPrecoVenda()">
+                    </div>
+                    <div class="form-group">
+                        <label>Imposto Municipal / ISS (%):</label>
+                        <input type="number" step="0.1" name="imposto_municipal" id="imposto_municipal" value="5.0" required oninput="calcularPrecoVenda()">
+                    </div>
+                    <div class="form-group">
+                        <label>Imposto Estadual / ICMS (%):</label>
+                        <input type="number" step="0.1" name="imposto_estadual" id="imposto_estadual" value="18.0" required oninput="calcularPrecoVenda()">
+                    </div>
+                    <div class="form-group">
+                        <label>Imposto Federal / IPI-PIS-COFINS (%):</label>
+                        <input type="number" step="0.1" name="imposto_federal" id="imposto_federal" value="9.25" required oninput="calcularPrecoVenda()">
+                    </div>
+                    <div class="form-group" style="grid-column: span 3;">
+                        <label style="color:var(--secondary-color); font-size:16px;">PREÇO DE VENDA FINAL SUGERIDO (R$):</label>
+                        <input type="number" step="0.01" name="preco_venda_final" id="preco_venda_final" readonly style="font-size:18px; color:var(--primary-color);">
+                    </div>
+                </div>
+                <div style="margin-top: 15px;">
+                    <button type="submit" class="btn btn-success">💾 Salvar Estrutura de Preço</button>
+                </div>
+            </form>
+        </div>
+        <h3>Modelos de Precificação no Banco de Dados</h3>
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th>Produto</th>
+                    <th>ISS (Mun.)</th>
+                    <th>ICMS (Est.)</th>
+                    <th>Federais</th>
+                    <th>Margem Lucro</th>
+                    <th>Preço Final</th>
+                    <th>Ações</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for preco in precos_salvos %}
+                <tr>
+                    <td><code>{{ preco.codigo_produto }}</code> - {{ preco.nome_produto }}</td>
+                    <td>{{ preco.imposto_municipal }}%</td>
+                    <td>{{ preco.imposto_estadual }}%</td>
+                    <td>{{ preco.imposto_federal }}%</td>
+                    <td>{{ preco.margem_lucro }}%</td>
+                    <td><strong>R$ {{ "%.2f"|format(preco.preco_venda_final) }}</strong></td>
+                    <td>
+                        <form action="/deletar_preco/{{ preco.id }}" method="POST" onsubmit="return confirm('Deseja remover este modelo de preço?');">
+                            <button type="submit" class="btn btn-danger">❌ Deletar</button>
+                        </form>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <script>
+        function atualizarCustoBase() {
+            const seletor = document.getElementById('produto_id');
+            const opcaoSelecionada = seletor.options[seletor.selectedIndex];
+            const custo = parseFloat(opcaoSelecionada.getAttribute('data-custo')) || 0;
+            document.getElementById('custo_fabricacao_visivel').value = custo.toFixed(2);
+            calcularPrecoVenda();
+        }
+
+        function calcularPrecoVenda() {
+            const custo = parseFloat(document.getElementById('custo_fabricacao_visivel').value) || 0;
+            const margem = parseFloat(document.getElementById('margem_lucro').value) || 0;
+            const municipal = parseFloat(document.getElementById('imposto_municipal').value) || 0;
+            const estadual = parseFloat(document.getElementById('imposto_estadual').value) || 0;
+            const federal = parseFloat(document.getElementById('imposto_federal').value) || 0;
+            
+            // Fórmula pedagógica do Markup por Dentro (Preço de venda absorve os impostos e a margem)
+            const somaPercentuais = (margem + municipal + estadual + federal) / 100;
+            
+            let precoFinal = 0;
+            if (somaPercentuais < 1) {
+                precoFinal = custo / (1 - somaPercentuais);
+            } else {
+                precoFinal = custo * (1 + somaPercentuais); // Fallback caso estoure os 100%
+            }
+            
+            document.getElementById('preco_venda_final').value = precoFinal.toFixed(2);
+        }
+    </script>
+</body>
+</html>
