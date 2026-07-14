@@ -27,35 +27,9 @@ def init_db():
     
     # Tabela de Máquinas e Equipamentos (Página 3)
     cursor.execute('CREATE TABLE IF NOT EXISTS maquinas (id INTEGER PRIMARY KEY AUTOINCREMENT, nome_equipamento TEXT NOT NULL, potencia REAL NOT NULL, consumo_eletrico REAL NOT NULL, velocidade TEXT, avanco TEXT, comprimento_max REAL, diametro_max REAL, frequencia_manutencao INTEGER NOT NULL, horas_trabalhadas INTEGER DEFAULT 0, preco_compra REAL NOT NULL, depreciacao_mensal REAL NOT NULL, valor_venda_final REAL NOT NULL, custo_minuto_maquina REAL NOT NULL)')
+    
     # Tabela de Materiais e Insumos (Página 4)
     cursor.execute('CREATE TABLE IF NOT EXISTS materiais (id INTEGER PRIMARY KEY AUTOINCREMENT, codigo_material TEXT UNIQUE NOT NULL, nome_material TEXT NOT NULL, preco_unidade REAL NOT NULL, dimensoes TEXT, volume_disponivel REAL NOT NULL)')
-    
-    # Tabela de Novas Requisições de Compras de Ativos (Inovação Tecnológica)
-    cursor.execute('CREATE TABLE IF NOT EXISTS requisicoes_compras (id INTEGER PRIMARY KEY AUTOINCREMENT, equipamento_tipo TEXT NOT NULL, especificacao_desejada TEXT NOT NULL, quantidade INTEGER DEFAULT 1, status TEXT DEFAULT "Pendente em Cotação", preco_cotado REAL DEFAULT 0, potencia_cotada REAL DEFAULT 0, depreciacao_sugerida REAL DEFAULT 0, data_requisicao TIMESTAMP DEFAULT CURRENT_TIMESTAMP)')
-
-    # Tabela Principal do Produto (Página 5)
-    cursor.execute('CREATE TABLE IF NOT EXISTS produtos (id INTEGER PRIMARY KEY AUTOINCREMENT, codigo_produto TEXT UNIQUE NOT NULL, nome_produto TEXT NOT NULL, custo_total_fabricacao REAL DEFAULT 0)')
-    
-    # Tabela União/Roteiro (Página 5)
-    cursor.execute('CREATE TABLE IF NOT EXISTS estrutura_produto (id INTEGER PRIMARY KEY AUTOINCREMENT, produto_id INTEGER NOT NULL, maquina_id INTEGER, material_id INTEGER, tempo_processo_min REAL DEFAULT 0, quantidade_material REAL DEFAULT 0, FOREIGN KEY(produto_id) REFERENCES produtos(id))')
-    
-    # Tabela de Formação de Preços (Página 6)
-    cursor.execute('CREATE TABLE IF NOT EXISTS formacao_precos (id INTEGER PRIMARY KEY AUTOINCREMENT, produto_id INTEGER UNIQUE NOT NULL, imposto_municipal REAL DEFAULT 0, imposto_estadual REAL DEFAULT 0, imposto_federal REAL DEFAULT 0, margem_lucro REAL DEFAULT 0, preco_venda_final REAL DEFAULT 0, FOREIGN KEY(produto_id) REFERENCES produtos(id))')
-    
-    # Tabela de Estoque de Produtos Acabados (Página 8)
-    cursor.execute('CREATE TABLE IF NOT EXISTS estoque_produtos (id INTEGER PRIMARY KEY AUTOINCREMENT, produto_id INTEGER UNIQUE NOT NULL, quantidade_disponivel REAL DEFAULT 0, FOREIGN KEY(produto_id) REFERENCES produtos(id))')
-    
-    # Tabela de Pedidos de Vendas (Página 7 - Corrigida coluna para quantidade)
-    cursor.execute('CREATE TABLE IF NOT EXISTS pedidos_vendas (id INTEGER PRIMARY KEY AUTOINCREMENT, produto_id INTEGER NOT NULL, quantidade INTEGER NOT NULL, desconto_percentual REAL DEFAULT 0, observacoes TEXT, data_pedido TIMESTAMP DEFAULT CURRENT_TIMESTAMP, FOREIGN KEY(produto_id) REFERENCES produtos(id))')
-    
-    # Tabela do Sequenciamento PCP (Página 9)
-    cursor.execute('CREATE TABLE IF NOT EXISTS ordens_processo (id INTEGER PRIMARY KEY AUTOINCREMENT, pedido_id INTEGER NOT NULL, numero_operacao TEXT NOT NULL, maquina_nome TEXT NOT NULL, codigo_produto TEXT NOT NULL, nome_produto TEXT NOT NULL, data_entrada TIMESTAMP DEFAULT CURRENT_TIMESTAMP, tempo_estimado_min REAL NOT NULL, data_saida TEXT DEFAULT "Aguardando", operador_nome TEXT DEFAULT "Pendente", status TEXT DEFAULT "Na Fila", FOREIGN KEY(pedido_id) REFERENCES pedidos_vendas(id))')
-    
-    conn.commit()
-    conn.close()
-
-if not os.path.exists(DATABASE):
-    init_db()
 # --- ROTAS DE ACESSO DIRETO (SISTEMA DE SEGURANÇA ANULADO) ---
 @app.route('/')
 def index():
@@ -95,6 +69,7 @@ def alterar_estrutura(id):
 def deletar_estrutura(id):
     conn = get_db_connection(); conn.execute('DELETE FROM investimentos_imobiliarios WHERE id=?', (id,)); conn.commit(); conn.close()
     return redirect(url_for('estrutura'))
+
 # --- ROTAS DA PÁGINA 3: MAQUINÁRIOS ---
 @app.route('/maquinas')
 def maquinas():
@@ -120,8 +95,7 @@ def alterar_maquina(id):
 def deletar_maquina(id):
     conn = get_db_connection(); conn.execute('DELETE FROM maquinas WHERE id=?', (id,)); conn.commit(); conn.close()
     return redirect(url_for('maquinas'))
-
-# --- ROTAS DO NOVO MÓDULO DE REQUISIÇÕES E COMPRAS ---
+# --- ROTAS DO MÓDULO DE REQUISIÇÕES E COMPRAS ---
 @app.route('/requisicoes')
 def requisicoes():
     conn = get_db_connection(); reqs = conn.execute('SELECT * FROM requisicoes_compras ORDER BY id DESC').fetchall(); conn.close()
@@ -157,7 +131,8 @@ def efetivar_compra(id):
 def deletar_requisicao(id):
     conn = get_db_connection(); conn.execute('DELETE FROM requisicoes_compras WHERE id=?', (id,)); conn.commit(); conn.close()
     return redirect(url_for('requisicoes'))
-# --- ROTAS DA PÁGINA 4: MATERIAIS ---
+
+# --- ROTAS DA PÁGINA 4: MATERIAIS (CORREÇÃO DE SALVAMENTO E ALTERAÇÃO) ---
 @app.route('/materiais')
 def materiais():
     conn = get_db_connection(); mats = conn.execute('SELECT * FROM materiais').fetchall(); conn.close()
@@ -165,17 +140,27 @@ def materiais():
 
 @app.route('/salvar_material', methods=['POST'])
 def salvar_material():
+    codigo = request.form['codigo_material']
+    nome = request.form['nome_material']
+    preco = float(request.form['preco_unidade'])
+    dimensoes = request.form['dimensoes']
+    volume = float(request.form['volume_disponivel']) # Alinhado com o HTML
     try:
         conn = get_db_connection()
-        conn.execute('INSERT INTO materiais (codigo_material, nome_material, preco_unidade, dimensoes, volume_disponivel) VALUES (?, ?, ?, ?, ?)', (request.form['codigo_material'], request.form['nome_material'], float(request.form['preco_unidade']), request.form['dimensoes'], float(request.form['volume_disponivel'])))
+        conn.execute('INSERT INTO materiais (codigo_material, nome_material, preco_unidade, dimensoes, volume_disponivel) VALUES (?, ?, ?, ?, ?)', (codigo, nome, preco, dimensoes, volume))
         conn.commit(); conn.close()
-    except sqlite3.IntegrityError: return "Erro: Código duplicado."
+    except sqlite3.IntegrityError: return "Erro Pedagógico: Código de material duplicado!"
     return redirect(url_for('materiais'))
 
 @app.route('/alterar_material/<int:id>', methods=['POST'])
 def alterar_material(id):
+    codigo = request.form['codigo_material']
+    nome = request.form['nome_material']
+    preco = float(request.form['preco_unidade'])
+    dimensoes = request.form['dimensoes']
+    volume = float(request.form['volume_disponivel']) # ALINHADO E CORRIGIDO DE VOL PARA VOLUME_DISPONIVEL
     conn = get_db_connection()
-    conn.execute('UPDATE materiais SET codigo_material=?, nome_material=?, preco_unidade=?, dimensoes=?, volume_disponivel=? WHERE id=?', (request.form['codigo_material'], request.form['nome_material'], float(request.form['preco_unidade']), request.form['dimensoes'], float(request.form['volume_disponivel']), id))
+    conn.execute('UPDATE materiais SET codigo_material=?, nome_material=?, preco_unidade=?, dimensoes=?, volume_disponivel=? WHERE id=?', (codigo, nome, preco, dimensoes, volume, id))
     conn.commit(); conn.close()
     return redirect(url_for('materiais'))
 
@@ -213,7 +198,6 @@ def vincular_estrutura():
 def deletar_item_estrutura(id):
     conn = get_db_connection(); conn.execute('DELETE FROM estrutura_produto WHERE id=?', (id,)); conn.commit(); conn.close()
     return redirect(url_for('engenharia'))
-
 # --- ROTAS DA PÁGINA 6: FORMAÇÃO DE PREÇOS ---
 @app.route('/precificacao')
 def precificacao():
@@ -234,7 +218,8 @@ def salvar_preco():
 def deletar_preco(id):
     conn = get_db_connection(); conn.execute('DELETE FROM formacao_precos WHERE id=?', (id,)); conn.commit(); conn.close()
     return redirect(url_for('precificacao'))
-# --- ROTAS DAS PÁGINAS 7 E 8: VENDAS E ESTOQUE BLINDADOS CONTRA ERROS ---
+
+# --- ROTAS DAS PÁGINAS 7 E 8: VENDAS E ESTOQUE BLINDADOS ---
 @app.route('/vendas')
 def vendas():
     conn = get_db_connection()
