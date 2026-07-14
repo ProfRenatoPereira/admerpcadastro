@@ -30,6 +30,34 @@ def init_db():
     
     # Tabela de Materiais e Insumos (Página 4)
     cursor.execute('CREATE TABLE IF NOT EXISTS materiais (id INTEGER PRIMARY KEY AUTOINCREMENT, codigo_material TEXT UNIQUE NOT NULL, nome_material TEXT NOT NULL, preco_unidade REAL NOT NULL, dimensoes TEXT, volume_disponivel REAL NOT NULL)')
+
+
+    # Tabela de Novas Requisições de Compras de Ativos
+    cursor.execute('CREATE TABLE IF NOT EXISTS requisicoes_compras (id INTEGER PRIMARY KEY AUTOINCREMENT, equipamento_tipo TEXT NOT NULL, especificacao_desejada TEXT NOT NULL, quantidade INTEGER DEFAULT 1, status TEXT DEFAULT "Pendente em Cotação", preco_cotado REAL DEFAULT 0, potencia_cotada REAL DEFAULT 0, depreciacao_sugerida REAL DEFAULT 0, data_requisicao TIMESTAMP DEFAULT CURRENT_TIMESTAMP)')
+
+    # Tabela Principal do Produto (Página 5)
+    cursor.execute('CREATE TABLE IF NOT EXISTS produtos (id INTEGER PRIMARY KEY AUTOINCREMENT, codigo_produto TEXT UNIQUE NOT NULL, nome_produto TEXT NOT NULL, custo_total_fabricacao REAL DEFAULT 0)')
+    
+    # Tabela União/Roteiro (Página 5)
+    cursor.execute('CREATE TABLE IF NOT EXISTS estrutura_produto (id INTEGER PRIMARY KEY AUTOINCREMENT, produto_id INTEGER NOT NULL, maquina_id INTEGER, material_id INTEGER, tempo_processo_min REAL DEFAULT 0, quantidade_material REAL DEFAULT 0, FOREIGN KEY(produto_id) REFERENCES produtos(id))')
+    
+    # Tabela de Formação de Preços (Página 6)
+    cursor.execute('CREATE TABLE IF NOT EXISTS formacao_precos (id INTEGER PRIMARY KEY AUTOINCREMENT, produto_id INTEGER UNIQUE NOT NULL, imposto_municipal REAL DEFAULT 0, imposto_estadual REAL DEFAULT 0, imposto_federal REAL DEFAULT 0, margem_lucro REAL DEFAULT 0, preco_venda_final REAL DEFAULT 0, FOREIGN KEY(produto_id) REFERENCES produtos(id))')
+    
+    # Tabela de Estoque de Produtos Acabados (Página 8)
+    cursor.execute('CREATE TABLE IF NOT EXISTS estoque_produtos (id INTEGER PRIMARY KEY AUTOINCREMENT, produto_id INTEGER UNIQUE NOT NULL, quantidade_disponivel REAL DEFAULT 0, FOREIGN KEY(produto_id) REFERENCES produtos(id))')
+    
+    # Tabela de Pedidos de Vendas (Página 7)
+    cursor.execute('CREATE TABLE IF NOT EXISTS pedidos_vendas (id INTEGER PRIMARY KEY AUTOINCREMENT, produto_id INTEGER NOT NULL, quantidade INTEGER NOT NULL, desconto_percentual REAL DEFAULT 0, observacoes TEXT, data_pedido TIMESTAMP DEFAULT CURRENT_TIMESTAMP, FOREIGN KEY(produto_id) REFERENCES produtos(id))')
+    
+    # Tabela do Sequenciamento PCP (Página 9)
+    cursor.execute('CREATE TABLE IF NOT EXISTS ordens_processo (id INTEGER PRIMARY KEY AUTOINCREMENT, pedido_id INTEGER NOT NULL, numero_operacao TEXT NOT NULL, maquina_nome TEXT NOT NULL, codigo_produto TEXT NOT NULL, nome_produto TEXT NOT NULL, data_entrada TIMESTAMP DEFAULT CURRENT_TIMESTAMP, tempo_estimado_min REAL NOT NULL, data_saida TEXT DEFAULT "Aguardando", operador_nome TEXT DEFAULT "Pendente", status TEXT DEFAULT "Na Fila", FOREIGN KEY(pedido_id) REFERENCES pedidos_vendas(id))')
+    
+    conn.commit()
+    conn.close()
+
+if not os.path.exists(DATABASE):
+    init_db()
 # --- ROTAS DE ACESSO DIRETO (SISTEMA DE SEGURANÇA ANULADO) ---
 @app.route('/')
 def index():
@@ -43,13 +71,25 @@ def login():
 def cadastrar_usuario():
     return redirect(url_for('estrutura'))
 
-# --- ROTAS DA PÁGINA 2: INVESTIMENTOS IMOBILIÁRIOS ---
+# --- ROTAS DA PÁGINA 2: INVESTIMENTOS IMOBILIÁRIOS (BLINDADA CONTRA CONFLITO DE VARIÁVEIS NO MENU) ---
 @app.route('/estrutura')
 def estrutura():
     conn = get_db_connection()
     registros = conn.execute('SELECT * FROM investimentos_imobiliarios').fetchall()
+    
+    # Alimenta variáveis genéricas para evitar que loops do menu colapsem a página
+    maquinas_dados = conn.execute('SELECT * FROM maquinas').fetchall()
+    mats = conn.execute('SELECT * FROM materiais').fetchall()
+    prods = conn.execute('SELECT * FROM produtos').fetchall()
+    
+    # Resolve especificamente o loop do seletor de abastecimento no menu/layout do estoque
+    itens_estoque = conn.execute('''
+        SELECT p.id AS produto_id, p.codigo_produto, p.nome_produto, COALESCE(ep.quantidade_disponivel, 0) AS quantidade_disponivel 
+        FROM produtos p LEFT JOIN estoque_produtos ep ON p.id = ep.produto_id
+    ''').fetchall()
+    
     conn.close()
-    return render_template('estrutura.html', taxa_atual=11.39, registros=registros)
+    return render_template('estrutura.html', taxa_atual=11.39, registros=registros, maquinas=maquinas_dados, materiais=mats, produtos=prods, estoque_itens=itens_estoque)
 
 @app.route('/salvar_estrutura', methods=['POST'])
 def salvar_estrutura():
@@ -73,9 +113,19 @@ def deletar_estrutura(id):
 # --- ROTAS DA PÁGINA 3: MAQUINÁRIOS ---
 @app.route('/maquinas')
 def maquinas():
-    conn = get_db_connection(); m_dados = conn.execute('SELECT * FROM maquinas').fetchall(); ult = conn.execute('SELECT aluguel_regional FROM investimentos_imobiliarios ORDER BY id DESC LIMIT 1').fetchone(); conn.close()
+    conn = get_db_connection()
+    m_dados = conn.execute('SELECT * FROM maquinas').fetchall()
+    ult = conn.execute('SELECT aluguel_regional FROM investimentos_imobiliarios ORDER BY id DESC LIMIT 1').fetchone()
+    
+    # Injeção preventiva para o menu
+    itens_estoque = conn.execute('''
+        SELECT p.id AS produto_id, p.codigo_produto, p.nome_produto, COALESCE(ep.quantidade_disponivel, 0) AS quantidade_disponivel 
+        FROM produtos p LEFT JOIN estoque_produtos ep ON p.id = ep.produto_id
+    ''').fetchall()
+    
+    conn.close()
     base = ult['aluguel_regional'] if ult else 0
-    return render_template('maquinas.html', maquinas=m_dados, custo_minuto_estrutural=base/(176*60) if base > 0 else 0)
+    return render_template('maquinas.html', maquinas=m_dados, custo_minuto_estrutural=base/(176*60) if base > 0 else 0, estoque_itens=itens_estoque)
 
 @app.route('/salvar_maquina', methods=['POST'])
 def salvar_maquina():
@@ -98,8 +148,10 @@ def deletar_maquina(id):
 # --- ROTAS DO MÓDULO DE REQUISIÇÕES E COMPRAS ---
 @app.route('/requisicoes')
 def requisicoes():
-    conn = get_db_connection(); reqs = conn.execute('SELECT * FROM requisicoes_compras ORDER BY id DESC').fetchall(); conn.close()
-    return render_template('requisicoes.html', requisicoes=reqs)
+    conn = get_db_connection(); reqs = conn.execute('SELECT * FROM requisicoes_compras ORDER BY id DESC').fetchall()
+    itens_estoque = conn.execute('SELECT p.id AS produto_id, p.codigo_produto, p.nome_produto FROM produtos p').fetchall()
+    conn.close()
+    return render_template('requisicoes.html', requisicoes=reqs, estoque_itens=itens_estoque)
 
 @app.route('/salvar_requisicao', methods=['POST'])
 def salvar_requisicao():
@@ -132,11 +184,13 @@ def deletar_requisicao(id):
     conn = get_db_connection(); conn.execute('DELETE FROM requisicoes_compras WHERE id=?', (id,)); conn.commit(); conn.close()
     return redirect(url_for('requisicoes'))
 
-# --- ROTAS DA PÁGINA 4: MATERIAIS (CORREÇÃO DE SALVAMENTO E ALTERAÇÃO) ---
+# --- ROTAS DA PÁGINA 4: MATERIAIS CORRIGIDAS CONTRA ERRO 500 ---
 @app.route('/materiais')
 def materiais():
-    conn = get_db_connection(); mats = conn.execute('SELECT * FROM materiais').fetchall(); conn.close()
-    return render_template('materiais.html', materiais=mats)
+    conn = get_db_connection(); mats = conn.execute('SELECT * FROM materiais').fetchall()
+    itens_estoque = conn.execute('SELECT p.id AS produto_id, p.codigo_produto, p.nome_produto FROM produtos p').fetchall()
+    conn.close()
+    return render_template('materiais.html', materiais=mats, estoque_itens=itens_estoque)
 
 @app.route('/salvar_material', methods=['POST'])
 def salvar_material():
@@ -144,13 +198,13 @@ def salvar_material():
     nome = request.form['nome_material']
     preco = float(request.form['preco_unidade'])
     dimensoes = request.form['dimensoes']
-    volume = float(request.form['volume_disponivel']) # Alinhado com o HTML
+    volume = float(request.form['volume_disponivel'])
     try:
         conn = get_db_connection()
         conn.execute('INSERT INTO materiais (codigo_material, nome_material, preco_unidade, dimensoes, volume_disponivel) VALUES (?, ?, ?, ?, ?)', (codigo, nome, preco, dimensoes, volume))
         conn.commit(); conn.close()
     except sqlite3.IntegrityError: return "Erro Pedagógico: Código de material duplicado!"
-    return redirect(url_for('materiais'))
+    return redirect(url_for('materials'))
 
 @app.route('/alterar_material/<int:id>', methods=['POST'])
 def alterar_material(id):
@@ -158,7 +212,7 @@ def alterar_material(id):
     nome = request.form['nome_material']
     preco = float(request.form['preco_unidade'])
     dimensoes = request.form['dimensoes']
-    volume = float(request.form['volume_disponivel']) # ALINHADO E CORRIGIDO DE VOL PARA VOLUME_DISPONIVEL
+    volume = float(request.form['volume_disponivel'])
     conn = get_db_connection()
     conn.execute('UPDATE materiais SET codigo_material=?, nome_material=?, preco_unidade=?, dimensoes=?, volume_disponivel=? WHERE id=?', (codigo, nome, preco, dimensoes, volume, id))
     conn.commit(); conn.close()
@@ -178,26 +232,7 @@ def engenharia():
     mats = conn.execute('SELECT id, nome_material, preco_unidade FROM materiais').fetchall()
     comps = conn.execute('SELECT ep.*, p.nome_produto, p.codigo_produto, m.nome_equipamento, mat.nome_material FROM estrutura_produto ep JOIN produtos p ON ep.produto_id = p.id LEFT JOIN maquinas m ON ep.maquina_id = m.id LEFT JOIN materiais mat ON ep.material_id = mat.id').fetchall()
     conn.close()
-    return render_template('engenharia.html', produtos=prods, maquinas=maqs, materiais=mats, composicoes=comps)
-
-@app.route('/salvar_produto', methods=['POST'])
-def salvar_produto():
-    try:
-        conn = get_db_connection(); conn.execute('INSERT INTO produtos (codigo_produto, nome_produto) VALUES (?, ?)', (request.form['codigo_produto'], request.form['nome_produto'])); conn.commit(); conn.close()
-    except sqlite3.IntegrityError: return "Erro: Produto duplicado."
-    return redirect(url_for('engenharia'))
-
-@app.route('/vincular_estrutura', methods=['POST'])
-def vincular_estrutura():
-    conn = get_db_connection()
-    conn.execute('INSERT INTO estrutura_produto (produto_id, maquina_id, material_id, tempo_processo_min, quantidade_material) VALUES (?, ?, ?, ?, ?)', (int(request.form['produto_id']), request.form['maquina_id'] or None, request.form['material_id'] or None, float(request.form['tempo_processo_min'] or 0), float(request.form['quantidade_material'] or 0)))
-    conn.commit(); conn.close()
-    return redirect(url_for('engenharia'))
-
-@app.route('/deletar_item_estrutura/<int:id>', methods=['POST'])
-def deletar_item_estrutura(id):
-    conn = get_db_connection(); conn.execute('DELETE FROM estrutura_produto WHERE id=?', (id,)); conn.commit(); conn.close()
-    return redirect(url_for('engenharia'))
+    return render_template('engenharia.html', produtos=prods, maquinas=maqs, materiais=mats, composicoes=comps, estoque_itens=prods)
 # --- ROTAS DA PÁGINA 6: FORMAÇÃO DE PREÇOS ---
 @app.route('/precificacao')
 def precificacao():
@@ -205,7 +240,7 @@ def precificacao():
     prods = conn.execute('SELECT p.id, p.codigo_produto, p.nome_produto, COALESCE(SUM(ep.tempo_processo_min * mq.custo_minuto_maquina), 0) + COALESCE(SUM(ep.quantidade_material * mt.preco_unidade), 0) AS custo_fabricacao FROM produtos p LEFT JOIN estrutura_produto ep ON p.id = ep.produto_id LEFT JOIN maquinas mq ON ep.maquina_id = mq.id LEFT JOIN materiais mt ON ep.material_id = mt.id GROUP BY p.id').fetchall()
     salvos = conn.execute('SELECT fp.*, p.codigo_produto, p.nome_produto FROM formacao_precos fp JOIN produtos p ON fp.produto_id = p.id').fetchall()
     conn.close()
-    return render_template('precificacao.html', produtos=prods, precos_salvos=salvos)
+    return render_template('precificacao.html', produtos=prods, precos_salvos=salvos, estoque_itens=prods)
 
 @app.route('/salvar_preco', methods=['POST'])
 def salvar_preco():
@@ -226,12 +261,16 @@ def vendas():
     prods = conn.execute('SELECT p.id, p.codigo_produto, p.nome_produto, fp.preco_venda_final, COALESCE(e.quantidade_disponivel, 0) AS estoque_atual FROM produtos p JOIN formacao_precos fp ON p.id = fp.produto_id LEFT JOIN estoque_produtos e ON p.id = e.produto_id').fetchall()
     peds = conn.execute('SELECT pv.*, p.codigo_produto, p.nome_produto, fp.preco_venda_final, fp.imposto_municipal, fp.imposto_estadual, fp.imposto_federal FROM pedidos_vendas pv JOIN produtos p ON pv.produto_id = p.id JOIN formacao_precos fp ON p.id = fp.produto_id ORDER BY pv.id DESC').fetchall()
     conn.close()
-    return render_template('vendas.html', produtos=prods, pedidos=peds)
+    return render_template('vendas.html', produtos=prods, pedidos=peds, estoque_itens=prods)
 
 @app.route('/estoque')
 def estoque():
     conn = get_db_connection()
-    itens = conn.execute('SELECT p.id AS produto_id, p.codigo_produto, p.nome_produto, COALESCE(ep.quantidade_disponivel, 0) AS quantidade_disponivel FROM produtos p LEFT JOIN estoque_produtos ep ON p.id = ep.produto_id').fetchall()
+    itens = conn.execute('''
+        SELECT p.id AS produto_id, p.codigo_produto, p.nome_produto, 
+               COALESCE(ep.quantidade_disponivel, 0) AS quantidade_disponivel 
+        FROM produtos p LEFT JOIN estoque_produtos ep ON p.id = ep.produto_id
+    ''').fetchall()
     conn.close()
     return render_template('estoque.html', estoque_itens=itens)
 
@@ -282,7 +321,7 @@ def imprimir_nf(pedido_id):
     liq = sub - v_desc
     return render_template('nota_fiscal.html', p=ped, subtotal=sub, v_desconto=v_desc, total_liquido=liq, v_municipal=liq*(ped['imposto_municipal']/100), v_estadual=liq*(ped['imposto_estadual']/100), v_federal=liq*(ped['imposto_federal']/100), total_impostos=liq*((ped['imposto_municipal']+ped['imposto_estadual']+ped['imposto_federal'])/100))
 
-# --- ROTAS DA PÁGINA 9 E ROI: PCP E RETORNO ACIONÁRIO ---
+# --- ROTAS DA PÁGINA 9 E ROI ---
 @app.route('/pcp')
 def pcp():
     conn = get_db_connection()
@@ -291,8 +330,10 @@ def pcp():
         rots = conn.execute('SELECT ep.*, m.nome_equipamento FROM estrutura_produto ep LEFT JOIN maquinas m ON ep.maquina_id = m.id WHERE ep.produto_id = ?', (v['prod_id'],)).fetchall()
         for idx, r in enumerate(rots):
             conn.execute('INSERT INTO ordens_processo (pedido_id, numero_operacao, maquina_nome, codigo_produto, nome_produto, tempo_estimado_min) VALUES (?, ?, ?, ?, ?, ?)', (v['pedido_id'], f"OP {(idx+1)*10}", r['nome_equipamento'] or 'Bancada Manual', v['codigo_produto'], v['nome_produto'], r['tempo_processo_min'] * v['quantidade']))
-    ords = conn.execute('SELECT * FROM ordens_processo ORDER BY id ASC').fetchall(); conn.close()
-    return render_template('pcp.html', ordens=ords)
+    ords = conn.execute('SELECT * FROM ordens_processo ORDER BY id ASC').fetchall()
+    itens_estoque = conn.execute('SELECT p.id AS produto_id, p.codigo_produto, p.nome_produto FROM produtos p').fetchall()
+    conn.close()
+    return render_template('pcp.html', ordens=ords, estoque_itens=itens_estoque)
 
 @app.route('/dar_baixa_op/<int:op_id>', methods=['POST'])
 def dar_baixa_op(op_id):
@@ -305,12 +346,13 @@ def roi():
     conn = get_db_connection()
     v_dados = conn.execute('SELECT SUM((fp.preco_venda_final * pv.quantidade) * (1 - pv.desconto_percentual/100)) AS receita_bruta, SUM(pv.quantidade) AS total_pecas FROM pedidos_vendas pv JOIN formacao_precos fp ON pv.produto_id = fp.produto_id').fetchone()
     invs = conn.execute('SELECT SUM(valor_terreno + valor_instalacoes) AS cap_imobilizado FROM investimentos_imobiliarios').fetchone()
+    itens_estoque = conn.execute('SELECT p.id AS produto_id, p.codigo_produto, p.nome_produto FROM produtos p').fetchall()
     conn.close()
     rec = v_dados['receita_bruta'] if v_dados and v_dados['receita_bruta'] else 0
     pecas = v_dados['total_pecas'] if v_dados and v_dados['total_pecas'] else 0
     cap = invs['cap_imobilizado'] if invs and invs['cap_imobilizado'] else 0
     lucro = rec * 0.15
-    return render_template('roi.html', receita=rec, pecas=pecas, capital=cap, lucro_acionistas=lucro, payback_real=(cap / lucro) if lucro > 0 else 0)
+    return render_template('roi.html', receita=rec, pecas=pecas, capital=cap, lucro_acionistas=lucro, payback_real=(cap / lucro) if lucro > 0 else 0, estoque_itens=itens_estoque)
 
 if __name__ == '__main__':
     app.run(debug=True)
