@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <title>DANFE Fictícia - NF-{{ p.id }}</title>
+    <style>
+        body { font-family: 'Courier New', Courier, monospace; margin: 20px; color: #000; font-size: 12px; }
+        .nf-box { border: 2px solid #000; padding: 15px; max-width: 800px; margin: 0 auto; background:#fff; }
+        .header { text-align: center; border-bottom: 2px dashed #000; padding-bottom: 10px; margin-bottom: 15px; }
+        .row { display: flex; justify-content: space-between; margin-bottom: 8px; }
+        .footer-obs { margin-top: 20px; border-top: 2px dashed #000; padding-top: 10px; font-style: italic; }
+        .btn-print { background: #000; color: #fff; padding: 10px; border: none; font-weight: bold; cursor: pointer; display: block; margin: 10px auto; }
+        @media print { .btn-print { display: none; } }
+    </style>
+</head>
+<body>
+    <button class="btn-print" onclick="window.print()">🖨️ Emitir via Impressora</button>
+
+    <div class="nf-box">
+        <div class="header">
+            <h2>MÁQUINA METALÚRGICA S.A. - NOTA FISCAL ELETRÔNICA SIMULADA</h2>
+            <p>SISTEMA ERP PEDAGÓGICO PCP | DOCUMENTO AUXILIAR DA DANFE</p>
+            <strong>NÚMERO DA NOTA: NF-000{{ p.id }} | SÉRIE: 1</strong>
+        </div>
+
+        <h3>DADOS DO PRODUTO E FATURAMENTO</h3>
+        <div class="row">
+            <span><strong>PRODUTO:</strong> {{ p.codigo_produto }} - {{ p.nome_produto }}</span>
+            <span><strong>QUANTIDADE:</strong> {{ p.quantidade }} un</span>
+        </div>
+        <div class="row">
+            <span><strong>PREÇO UNITÁRIO:</strong> R$ {{ "%.2f"|format(p.preco_venda_final) }}</span>
+            <span><strong>SUBTOTAL:</strong> R$ {{ "%.2f"|format(subtotal) }}</span>
+        </div>
+        <div class="row">
+            <span><strong>DESCONTO APLICADO:</strong> {{ p.desconto_percentual }}% (-R$ {{ "%.2f"|format(v_desconto) }})</span>
+            <span><strong>VALOR LÍQUIDO DA NOTA:</strong> R$ {{ "%.2f"|format(total_liquido) }}</span>
+        </div>
+
+        <hr style="border: 1px solid #000;">
+        
+        <h3>DEMONSTRATIVO DE IMPOSTOS RETIDOS</h3>
+        <div class="row">
+            <span>ALIQUOTA ISS (MUNICIPAL): {{ p.imposto_municipal }}%</span>
+            <span>VALOR RETIDO ISS: R$ {{ "%.2f"|format(v_municipal) }}</span>
+        </div>
+        <div class="row">
+            <span>ALIQUOTA ICMS (ESTADUAL): {{ p.imposto_all }}18.0%</span>
+            <span>VALOR RETIDO ICMS: R$ {{ "%.2f"|format(v_estadual) }}</span>
+        </div>
+        <div class="row">
+            <span>ALIQUOTA IMPOSTOS FEDERAIS: {{ p.imposto_federal }}%</span>
+            <span>VALOR RETIDO FEDERAIS: R$ {{ "%.2f"|format(v_federal) }}</span>
+        </div>
+        <div class="row" style="font-size:14px; font-weight:bold; margin-top:10px;">
+            <span>TOTAL DE TRIBUTOS ESTIMADOS:</span>
+            <span>R$ {{ "%.2f"|format(total_impostos) }}</span>
+        </div>
+
+        <div class="footer-obs">
+            <p><strong>OBSERVAÇÕES DO FISCO FILOSÓFICO:</strong> {{ p.observacoes }}</p>
+            <p>*Nota emitida para fins estritamente pedagógicos e simulações de engenharia econômica em sala de aula.</p>
+        </div>
+    </div>
+</body>
+</html>
