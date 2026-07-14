@@ -61,6 +61,21 @@ DATABASE = 'database.db'
         )
     ''')
 
+    # Tabela de Formação de Preços e Impostos (Página 6)
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS formacao_precos (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            produto_id INTEGER UNIQUE NOT NULL,
+            imposto_municipal REAL DEFAULT 0,
+            imposto_estadual REAL DEFAULT 0,
+            imposto_federal REAL DEFAULT 0,
+            margem_lucro REAL DEFAULT 0,
+            preco_venda_final REAL DEFAULT 0,
+            FOREIGN KEY(produto_id) REFERENCES produtos(id)
+        )
+    ''')
+
+
 
 
 def get_db_connection():
@@ -385,3 +400,53 @@ def deletar_item_estrutura(id):
     conn.commit()
     conn.close()
     return redirect(url_for('engenharia'))
+# --- ROTAS DA PÁGINA 6: FORMAÇÃO DE PREÇOS ---
+@app.route('/precificacao')
+def precificacao():
+    conn = get_db_connection()
+    # Puxa produtos e calcula o custo total acumulado de cada um (máquina + material)
+    produtos = conn.execute('''
+        SELECT p.id, p.codigo_produto, p.nome_produto,
+               COALESCE(SUM(ep.tempo_processo_min * mq.custo_minuto_maquina), 0) +
+               COALESCE(SUM(ep.quantidade_material * mt.preco_unidade), 0) AS custo_fabricacao
+        FROM produtos p
+        LEFT JOIN estrutura_produto ep ON p.id = ep.produto_id
+        LEFT JOIN maquinas mq ON ep.maquina_id = mq.id
+        LEFT JOIN materiais mt ON ep.material_id = mt.id
+        GROUP BY p.id
+    ''').fetchall()
+    
+    precos_salvos = conn.execute('''
+        SELECT fp.*, p.codigo_produto, p.nome_produto 
+        FROM formacao_precos fp
+        JOIN produtos p ON fp.produto_id = p.id
+    ''').fetchall()
+    conn.close()
+    
+    return render_template('precificacao.html', produtos=produtos, precos_salvos=precos_salvos)
+
+@app.route('/salvar_preco', methods=['POST'])
+def salvar_preco():
+    prod_id = int(request.form['produto_id'])
+    municipal = float(request.form['imposto_municipal'] or 0)
+    estadual = float(request.form['imposto_estadual'] or 0)
+    federal = float(request.form['imposto_federal'] or 0)
+    margem = float(request.form['margem_lucro'] or 0)
+    preco_final = float(request.form['preco_venda_final'] or 0)
+    
+    conn = get_db_connection()
+    conn.execute('''
+        INSERT OR REPLACE INTO formacao_precos 
+        (produto_id, imposto_municipal, imposto_estadual, imposto_federal, margem_lucro, preco_venda_final)
+        VALUES (?, ?, ?, ?, ?, ?)
+    ''', (prod_id, municipal, estadual, federal, margem, preco_final))
+    conn.commit()
+    conn.close()
+    return redirect(url_for('precificacao'))
+@app.route('/deletar_preco/<int:id>', methods=['POST'])
+def deletar_preco(id):
+    conn = get_db_connection()
+    conn.execute('DELETE FROM formacao_precos WHERE id=?', (id,))
+    conn.commit()
+    conn.close()
+    return redirect(url_for('precificacao'))
