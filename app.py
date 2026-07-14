@@ -75,6 +75,29 @@ DATABASE = 'database.db'
         )
     ''')
 
+    # Tabela de Estoque de Produtos Acabados (Página 8)
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS estoque_produtos (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            produto_id INTEGER UNIQUE NOT NULL,
+            quantidade_disponivel REAL DEFAULT 0,
+            FOREIGN KEY(produto_id) REFERENCES produtos(id)
+        )
+    ''')
+
+    # Tabela de Pedidos de Vendas (Página 7)
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS pedidos_vendas (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            produto_id INTEGER NOT NULL,
+            quantidade INTEGER NOT NULL,
+            desconto_percentual REAL DEFAULT 0,
+            observacoes TEXT,
+            data_pedido TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY(produto_id) REFERENCES produtos(id)
+        )
+    ''')
+
 
 
 
@@ -450,3 +473,74 @@ def deletar_preco(id):
     conn.commit()
     conn.close()
     return redirect(url_for('precificacao'))
+# --- ROTAS DAS PÁGINAS 7 E 8: VENDAS E ESTOQUE ---
+@app.route('/vendas')
+def vendas():
+    conn = get_db_connection()
+    # Carrega produtos que já possuem preço final de venda configurado
+    produtos = conn.execute('''
+        SELECT p.id, p.codigo_produto, p.nome_produto, fp.preco_venda_final, 
+               COALESCE(e.quantidade_disponivel, 0) AS estoque_atual
+        FROM produtos p
+        JOIN formacao_precos fp ON p.id = fp.produto_id
+        LEFT JOIN estoque_produtos e ON p.id = e.produto_id
+    ''').fetchall()
+    
+    pedidos = conn.execute('''
+        SELECT pv.*, p.codigo_produto, p.nome_produto, fp.preco_venda_final,
+               fp.imposto_municipal, fp.imposto_estadual, fp.imposto_federal
+        FROM pedidos_vendas pv
+        JOIN produtos p ON pv.produto_id = p.id
+        JOIN formacao_precos fp ON p.id = fp.produto_id
+        ORDER BY pv.id DESC
+    ''').fetchall()
+    conn.close()
+    return render_template('vendas.html', produtos=produtos, pedidos=pedidos)
+
+@app.route('/estoque')
+def estoque():
+    conn = get_db_connection()
+    estoque_itens = conn.execute('''
+        SELECT ep.*, p.codigo_produto, p.nome_produto 
+        FROM estoque_produtos ep
+        JOIN produtos p ON ep.produto_id = p.id
+    ''').fetchall()
+    conn.close()
+    return render_template('estoque.html', estoque_itens=estoque_itens)
+@app.route('/lancar_venda', methods=['POST'])
+def lancar_venda():
+    prod_id = int(request.form['produto_id'])
+    qtd = int(request.form['quantidade'])
+    desconto = float(request.form['desconto_percentual'] or 0)
+    obs = request.form['observacoes']
+    
+    conn = get_db_connection()
+    # Verifica disponibilidade em estoque
+    est = conn.execute('SELECT quantidade_disponivel FROM estoque_produtos WHERE produto_id = ?', (prod_id,)).fetchone()
+    estoque_atual = est['quantidade_disponivel'] if est else 0
+    
+    if estoque_atual < qtd:
+        conn.close()
+        return "Erro Pedagógico: Saldo de estoque insuficiente para realizar esta venda! Abasteça o estoque primeiro."
+    
+    # Executa a baixa no estoque e insere o pedido de venda
+    conn.execute('UPDATE estoque_produtos SET quantidade_disponivel = quantidade_disponivel - ? WHERE produto_id = ?', (qtd, prod_id))
+    conn.execute('''
+        INSERT INTO pedidos_vendas (produto_id, quantidade, desconto_percentual, observacoes)
+        VALUES (?, ?, ?, ?)
+    ''', (prod_id, qtd, descuento, obs))
+    conn.commit()
+    conn.close()
+    return redirect(url_for('vendas'))
+
+@app.route('/deletar_venda/<int:id>', methods=['POST'])
+def deletar_venda(id):
+    conn = get_db_connection()
+    # Estorna a quantidade de volta para o estoque ao deletar o pedido
+    pedido = conn.execute('SELECT produto_id, quantidade FROM pedidos_vendas WHERE id = ?', (id,)).fetchone()
+    if pedido:
+        conn.execute('UPDATE estoque_produtos SET quantidade_disponivel = quantidade_disponivel + ? WHERE produto_id = ?', (pedido['quantidade'], pedido['produto_id']))
+        conn.execute('DELETE FROM pedidos_vendas WHERE id = ?', (id,))
+    conn.commit()
+    conn.close()
+    return redirect(url_for('vendas'))
