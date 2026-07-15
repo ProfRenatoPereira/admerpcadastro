@@ -307,7 +307,6 @@ def abastecer_estoque():
     conn.commit()
     conn.close()
     return redirect(url_for('estoque'))
-
 @app.route('/lancar_venda', methods=['POST'])
 def lancar_venda():
     prod_id = int(request.form['produto_id'])
@@ -378,3 +377,10 @@ def roi():
     
     rec = v_dados['receita_bruta'] if v_dados and v_dados['receita_bruta'] else 0
     pecas = v_dados['total_pecas'] if v_dados and v_dados['total_pecas'] else 0
+    cap = invs['cap_imobilizado'] if invs and invs['cap_imobilizado'] else 1
+    
+    roi_calculado = (rec / cap) * 100
+    return render_template('roi.html', receita=rec, total_pecas=pecas, capital=cap, roi=roi_calculado)
+
+if __name__ == '__main__':
+    app.run(debug=True)
