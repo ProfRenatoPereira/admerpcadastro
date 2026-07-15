@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <title>Departamento de Compras e Suprimentos</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+
+<div class="container">
+    <h2>Módulo: Cockpit de Compras & Suprimentos</h2>
+    <p>Análise de propostas comerciais e efetivação de contratos de fornecimento.</p>
+
+    <!-- Cards de Efetivação de Pedidos Cotados -->
+    <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 20px; margin-top: 20px;">
+        {% for req in requisicoes_cotadas %}
+        <div style="background: #f8f9fa; padding: 20px; border-radius: 8px; border-left: 5px solid #17a2b8; box-shadow: 0 2px 4px rgba(0,0,0,0.05);">
+            <h4>Pedido #{{ req.id }} - {{ req.equipamento_tipo }}</h4>
+            <p><strong>Item Solicitado:</strong> {{ req.especificacao_desejada }}</p>
+            <p><strong>Quantidade Solicitada:</strong> {{ req.quantidade }}</p>
+            <hr>
+            
+            <!-- Formulário para o estudante simular a Negociação Comercial -->
+            <form action="/efetivar_compra/{{ req.id }}" method="POST">
+                <div class="form-group" style="margin-bottom: 10px;">
+                    <label>Valor Comercial Acordado (R$ Total):</label>
+                    <input type="number" step="0.01" name="preco_final" value="{{ req.preco_cotado }}" required class="form-control">
+                </div>
+                
+                {% if req.equipamento_tipo == "Máquina / Ativo" %}
+                <div class="form-group" style="margin-bottom: 10px;">
+                    <label>Potência Nominal (kW):</label>
+                    <input type="number" step="0.1" name="potencia_final" value="{{ req.potencia_cotada }}" required class="form-control">
+                </div>
+                <div class="form-group" style="margin-bottom: 10px;">
+                    <label>Depreciação Mensal Estimada (R$):</label>
+                    <input type="number" step="0.01" name="depreciacao_final" value="{{ req.depreciacao_sugerida }}" required class="form-control">
+                </div>
+                {% else %}
+                <!-- Valores ocultos ou zerados automáticos para Insumos/Serviços -->
+                <input type="hidden" name="potencia_final" value="0">
+                <input type="hidden" name="depreciacao_final" value="0">
+                {% endif %}
+                <div style="margin-top: 15px; display: flex; gap: 10px;">
+                    <button type="submit" class="btn btn-success" style="width: 100%;">✍️ Fechar Negócio e Ativar</button>
+                    <button type="button" class="btn btn-danger" onclick="rejeitarPedido('{{ req.id }}')">❌ Cancelar</button>
+                </div>
+            </form>
+        </div>
+        {% else %}
+        <div style="grid-column: span 2; text-align: center; color: #6c757d; padding: 40px;">
+            <p>📭 Nenhuma cotação de mercado aguardando aprovação no momento.</p>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+
+<script>
+    function rejeitarPedido(id) {
+        if(confirm("Deseja rejeitar e remover esta requisição de compra da fila de suprimentos?")) {
+            let f = document.createElement('form');
+            f.action = '/deletar_requisicao/' + id;
+            f.method = 'POST';
+            document.body.appendChild(f);
+            f.submit();
+        }
+    }
+</script>
+</body>
+</html>
