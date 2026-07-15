@@ -105,7 +105,6 @@ def salvar_estrutura():
     conn.commit()
     conn.close()
     return redirect(url_for('estrutura'))
-
 @app.route('/alterar_estrutura/<int:id>', methods=['POST'])
 def alterar_estrutura(id):
     conn = get_db_connection()
@@ -130,6 +129,7 @@ def deletar_estrutura(id):
     conn.commit()
     conn.close()
     return redirect(url_for('estrutura'))
+
 # --- ROTAS DA PÁGINA 3: MAQUINÁRIOS ---
 @app.route('/maquinas')
 def maquinas():
@@ -152,7 +152,6 @@ def salvar_maquina():
     conn.commit()
     conn.close()
     return redirect(url_for('maquinas'))
-
 @app.route('/alterar_maquina/<int:id>', methods=['POST'])
 def alterar_maquina(id):
     conn = get_db_connection()
@@ -165,6 +164,22 @@ def alterar_maquina(id):
     conn.commit()
     conn.close()
     return redirect(url_for('maquinas'))
+
+# --- ROTAS NOVAS: VIEWS DE REQUISIÇÕES E COCKPIT DE COMPRAS ---
+@app.route('/requisicoes')
+def requisicoes():
+    conn = get_db_connection()
+    reqs = conn.execute('SELECT * FROM requisicoes_compras ORDER BY id DESC').fetchall()
+    conn.close()
+    return render_template('requisicoes.html', requisicoes=reqs)
+
+@app.route('/compras')
+def compras():
+    conn = get_db_connection()
+    cotadas = conn.execute("SELECT * FROM requisicoes_compras WHERE status LIKE 'Cotado%' ORDER BY id DESC").fetchall()
+    conn.close()
+    return render_template('compras.html', requisicoes_cotadas=cotadas)
+
 @app.route('/salvar_requisicao', methods=['POST'])
 def salvar_requisicao():
     conn = get_db_connection()
@@ -172,7 +187,6 @@ def salvar_requisicao():
     conn.commit()
     conn.close()
     return redirect(url_for('requisicoes'))
-
 @app.route('/cotar_internet/<int:id>', methods=['POST'])
 def cotar_internet(id):
     conn = get_db_connection()
@@ -228,7 +242,6 @@ def materiais():
     mats = conn.execute('SELECT * FROM materiais').fetchall()
     conn.close()
     return render_template('materiais.html', materiais=mats)
-
 @app.route('/salvar_material', methods=['POST'])
 def salvar_material():
     codigo = request.form['codigo_material']
@@ -265,6 +278,7 @@ def deletar_material(id):
     conn.commit()
     conn.close()
     return redirect(url_for('materiais'))
+
 # --- ROTAS DA PÁGINA 5: ENGENHARIA DE PRODUTO ---
 @app.route('/engenharia')
 def engenharia():
@@ -319,7 +333,6 @@ def salvar_preco():
     conn.commit()
     conn.close()
     return redirect(url_for('precificacao'))
-
 # --- ROTAS DAS PÁGINAS 7 E 8: VENDAS E ESTOQUE BLINDADOS ---
 @app.route('/vendas')
 def vendas():
@@ -349,6 +362,7 @@ def abastecer_estoque():
     conn.commit()
     conn.close()
     return redirect(url_for('estoque'))
+
 @app.route('/lancar_venda', methods=['POST'])
 def lancar_venda():
     prod_id = int(request.form['produto_id'])
