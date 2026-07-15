@@ -1,11 +1,13 @@
 import os
 import sqlite3
 import datetime
+import math
 from flask import Flask, render_template, request, redirect, url_for, flash
 
 app = Flask(__name__)
 app.secret_key = 'chave_secreta_pedagogica'
 
+# Caminho para o banco de dados SQLite
 DATABASE = 'database.db'
 
 def get_db_connection():
@@ -18,9 +20,10 @@ def init_db():
     conn = get_db_connection()
     cursor = conn.cursor()
 
+    # Tabela de Usuários (Anulada no uso, mantida para estrutura)
     cursor.execute('CREATE TABLE IF NOT EXISTS usuarios (id INTEGER PRIMARY KEY AUTOINCREMENT, usuario TEXT UNIQUE NOT NULL, senha TEXT NOT NULL, aprovado INTEGER DEFAULT 0)')
 
-    # Tabela imobiliaria atualizada
+    # Tabela imobiliaria com suporte a localização detalhada (Página 2)
     cursor.execute('''
         CREATE TABLE IF NOT EXISTS investimentos_imobiliarios (
             id INTEGER PRIMARY KEY AUTOINCREMENT, 
@@ -35,7 +38,7 @@ def init_db():
         )
     ''')
 
-    # Tabela de Máquinas com suporte a Operador e Mão de Obra Direta
+    # Tabela de Máquinas com suporte a Operador e Mão de Obra Direta (Página 3)
     cursor.execute('''
         CREATE TABLE IF NOT EXISTS maquinas (
             id INTEGER PRIMARY KEY AUTOINCREMENT, 
@@ -57,21 +60,52 @@ def init_db():
         )
     ''')
 
+    # Tabela de Materiais e Insumos (Página 4)
     cursor.execute('CREATE TABLE IF NOT EXISTS materiais (id INTEGER PRIMARY KEY AUTOINCREMENT, codigo_material TEXT UNIQUE NOT NULL, nome_material TEXT NOT NULL, preco_unidade REAL NOT NULL, dimensoes TEXT, volume_disponivel REAL NOT NULL)')
-    cursor.execute('CREATE TABLE IF NOT EXISTS requisicoes_compras (id INTEGER PRIMARY KEY AUTOINCREMENT, equipamento_tipo TEXT NOT NULL, especificacao_desejada TEXT NOT NULL, quantity INTEGER DEFAULT 1, status TEXT DEFAULT "Pendente em Cotação", preco_cotado REAL DEFAULT 0, potencia_cotada REAL DEFAULT 0, depreciacao_sugerida REAL DEFAULT 0, data_requisicao TIMESTAMP DEFAULT CURRENT_TIMESTAMP)'.replace('quantity', 'quantidade'))
+    # Tabela de Novas Requisições de Compras de Ativos (Inovação Tecnológica)
+    cursor.execute('CREATE TABLE IF NOT EXISTS requisicoes_compras (id INTEGER PRIMARY KEY AUTOINCREMENT, equipamento_tipo TEXT NOT NULL, especificacao_desejada TEXT NOT NULL, quantidade INTEGER DEFAULT 1, status TEXT DEFAULT "Pendente em Cotação", preco_cotado REAL DEFAULT 0, potencia_cotada REAL DEFAULT 0, depreciacao_sugerida REAL DEFAULT 0, data_requisicao TIMESTAMP DEFAULT CURRENT_TIMESTAMP)')
+
+    # Tabela Principal do Produto (Página 5)
     cursor.execute('CREATE TABLE IF NOT EXISTS produtos (id INTEGER PRIMARY KEY AUTOINCREMENT, codigo_produto TEXT UNIQUE NOT NULL, nome_produto TEXT NOT NULL, custo_total_fabricacao REAL DEFAULT 0)')
+        
+    # Tabela União/Roteiro (Página 5)
     cursor.execute('CREATE TABLE IF NOT EXISTS estrutura_produto (id INTEGER PRIMARY KEY AUTOINCREMENT, produto_id INTEGER NOT NULL, maquina_id INTEGER, material_id INTEGER, tempo_processo_min REAL DEFAULT 0, quantidade_material REAL DEFAULT 0, FOREIGN KEY(produto_id) REFERENCES produtos(id))')
+        
+    # Tabela de Formação de Preços (Página 6)
     cursor.execute('CREATE TABLE IF NOT EXISTS formacao_precos (id INTEGER PRIMARY KEY AUTOINCREMENT, produto_id INTEGER UNIQUE NOT NULL, imposto_municipal REAL DEFAULT 0, imposto_estadual REAL DEFAULT 0, imposto_federal REAL DEFAULT 0, margem_lucro REAL DEFAULT 0, preco_venda_final REAL DEFAULT 0, FOREIGN KEY(produto_id) REFERENCES produtos(id))')
+        
+    # Tabela de Estoque de Produtos Acabados (Página 8)
     cursor.execute('CREATE TABLE IF NOT EXISTS estoque_produtos (id INTEGER PRIMARY KEY AUTOINCREMENT, produto_id INTEGER UNIQUE NOT NULL, quantidade_disponivel REAL DEFAULT 0, FOREIGN KEY(produto_id) REFERENCES produtos(id))')
+        
+    # Tabela de Pedidos de Vendas (Página 7)
     cursor.execute('CREATE TABLE IF NOT EXISTS pedidos_vendas (id INTEGER PRIMARY KEY AUTOINCREMENT, produto_id INTEGER NOT NULL, quantidade INTEGER NOT NULL, desconto_percentual REAL DEFAULT 0, observacoes TEXT, data_pedido TIMESTAMP DEFAULT CURRENT_TIMESTAMP, FOREIGN KEY(produto_id) REFERENCES produtos(id))')
-    cursor.execute('CREATE TABLE IF NOT EXISTS ordens_processo (id INTEGER PRIMARY KEY AUTOINCREMENT, pedido_id INTEGER NOT NULL, numero_operacao TEXT NOT NULL, maquina_nome TEXT NOT NULL, codigo_produto TEXT NOT NULL, nome_produto TEXT NOT NULL, data_entrada TIMESTAMP DEFAULT CURRENT_TIMESTAMP, tempo_estimado_min REAL NOT NULL, data_saida TEXT DEFAULT "Aguardando", operador_nome TEXT DEFAULT "Pendente", status TEXT DEFAULT "Na Fila", FOREIGN KEY(pedido_id) REFERENCES pedidos_vendas(id))')
-    
+        
+    # Tabela do Sequenciamento PCP atualizada com campos de custo e encadeamento temporal (Página 9)
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS ordens_processo (
+            id INTEGER PRIMARY KEY AUTOINCREMENT, 
+            pedido_id INTEGER NOT NULL, 
+            numero_operacao TEXT NOT NULL, 
+            maquina_name TEXT NOT NULL, 
+            codigo_produto TEXT NOT NULL, 
+            nome_produto TEXT NOT NULL, 
+            data_entrada TEXT NOT NULL, 
+            tempo_estimado_min REAL NOT NULL, 
+            data_saida TEXT NOT NULL, 
+            operador_nome TEXT DEFAULT 'Pendente', 
+            status TEXT DEFAULT 'Na Fila',
+            custo_operacao REAL DEFAULT 0.0,
+            FOREIGN KEY(pedido_id) REFERENCES pedidos_vendas(id)
+        )
+    ''')
+        
     conn.commit()
     conn.close()
 
 if not os.path.exists(DATABASE):
     init_db()
 
+# --- ROTAS DE ACESSO DIRETO (SISTEMA DE SEGURANÇA ANULADO) ---
 @app.route('/')
 def index():
     return redirect(url_for('estrutura'))
@@ -83,7 +117,7 @@ def login():
 @app.route('/cadastrar_usuario', methods=['POST'])
 def cadastrar_usuario():
     return redirect(url_for('estrutura'))
-# --- ROTAS DA PÁGINA 2: INVESTIMENTOS IMOBILIÁRIOS ---
+# --- ROTAS DA PÁGINA 2: INVESTIMENTOS IMOBILIÁRIOS MODIFICADAS ---
 @app.route('/estrutura')
 def estrutura():
     conn = get_db_connection()
@@ -132,6 +166,7 @@ def deletar_estrutura(id):
     conn.commit()
     conn.close()
     return redirect(url_for('estrutura'))
+
 # --- ROTAS DA PÁGINA 3: MAQUINÁRIOS ---
 @app.route('/maquinas')
 def maquinas():
@@ -165,16 +200,8 @@ def salvar_maquina():
 def alterar_maquina(id):
     conn = get_db_connection()
     conn.execute('''
-        UPDATE maquinas 
-        SET nome_equipamento=?, potencia=?, consumo_eletrico=?, velocidade=?, avanco=?, comprimento_max=?, 
-            diametro_max=?, frequencia_manutencao=?, horas_trabalhadas=?, preco_compra=?, depreciacao_mensal=?, 
-            valor_venda_final=?, custo_minuto_maquina=?, operador_nome=?, custo_minuto_operador=? WHERE id=?''', 
-        (request.form['nome_equipamento'], float(request.form['potencia']), float(request.form['consumo_eletrico']), 
-         request.form['velocidade'], request.form['avanco'], float(request.form['comprimento_max'] or 0), 
-         float(request.form['diametro_max'] or 0), int(request.form['frequencia_manutencao']), 
-         int(request.form['horas_trabalhadas'] or 0), float(request.form['preco_compra']), 
-         float(request.form['depreciacao_mensal']), float(request.form['valor_venda_final']), 
-         float(request.form['custo_minuto_maquina']), request.form['operador_nome'], float(request.form['custo_minuto_operador'] or 0), id))
+        UPDATE maquinas SET nome_equipamento=?, potencia=?, consumo_eletrico=?, velocidade=?, avanco=?, comprimento_max=?, diametro_max=?, frequencia_manutencao=?, horas_trabalhadas=?, preco_compra=?, depreciacao_mensal=?, valor_venda_final=?, custo_minuto_maquina=?, operador_nome=?, custo_minuto_operador=? WHERE id=?''', 
+        (request.form['nome_equipamento'], float(request.form['potencia']), float(request.form['consumo_eletrico']), request.form['velocidade'], request.form['avanco'], float(request.form['comprimento_max'] or 0), float(request.form['diametro_max'] or 0), int(request.form['frequencia_manutencao']), int(request.form['horas_trabalhadas'] or 0), float(request.form['preco_compra']), float(request.form['depreciacao_mensal']), float(request.form['valor_venda_final']), float(request.form['custo_minuto_maquina']), request.form['operador_nome'], float(request.form['custo_minuto_operador'] or 0), id))
     conn.commit()
     conn.close()
     return redirect(url_for('maquinas'))
@@ -186,7 +213,6 @@ def deletar_maquina(id):
     conn.commit()
     conn.close()
     return redirect(url_for('maquinas'))
-
 # --- ROTAS DA CENTRAL DE REQUISIÇÕES E SUPRIMENTOS ---
 @app.route('/requisicoes')
 def requisicoes():
@@ -218,8 +244,7 @@ def cotar_internet(id):
         tipo = req['equipamento_tipo'].lower()
         esp = req['especificacao_desejada'].lower()
         preco, pot, dep = 45000, 5.5, 375
-        if 'torno' in tipo or 'cnc' in tipo:
-            preco, pot, dep = (480000, 22.0, 4000) if 'mazak' in esp else (250000, 15.0, 2100)
+        if 'torno' in tipo or 'cnc' in tipo: preco, pot, dep = (480000, 22.0, 4000) if 'mazak' in esp else (250000, 15.0, 2100)
         elif 'fresa' in tipo: preco, pot, dep = (110000, 7.5, 900)
         elif 'serra' in tipo: preco, pot, dep = (22000, 2.2, 180)
         conn.execute('UPDATE requisicoes_compras SET preco_cotado=?, potencia_cotada=?, depreciacao_sugerida=?, status="Cotado - Aguardando Confirmação" WHERE id=?', (preco, pot, dep, id))
@@ -253,6 +278,7 @@ def deletar_requisicao(id):
     conn.commit()
     conn.close()
     return redirect(url_for('requisicoes'))
+
 # --- ROTAS DA PÁGINA 4: MATERIAIS ---
 @app.route('/materiais')
 def materiais():
@@ -286,14 +312,15 @@ def deletar_material(id):
     conn.commit()
     conn.close()
     return redirect(url_for('materiais'))
-# --- FLUXOS FINAIS ERP (ENGENHARIA, CONTROLADORIA, PCP, VENDAS E ROI) ---
+
+# --- ROTAS DA PÁGINA 5: ENGENHARIA DE PRODUTO ---
 @app.route('/engenharia')
 def engenharia():
     conn = get_db_connection()
     prods = conn.execute('SELECT * FROM produtos').fetchall()
     maqs = conn.execute('SELECT id, nome_equipamento, custo_minuto_maquina FROM maquinas').fetchall()
     mats = conn.execute('SELECT id, nome_material, preco_unidade FROM materiais').fetchall()
-    comps = conn.execute('SELECT ep.*, p.nome_produto, p.codigo_produto, m.nome_equipamento, mat.nome_material FROM estrutura_produto ep JOIN produtos p ON ep.produto_id = p.id LEFT JOIN maquinas m ON ep.maquina_id = m.id LEFT JOIN materiais mat ON ep.material_id = mat.id').fetchall()
+    comps = conn.execute('SELECT ep.*, p.nome_produto, p.codigo_produto, m.nome_equipamento, mat.nome_material FROM structure_produto ep JOIN produtos p ON ep.produto_id = p.id LEFT JOIN maquinas m ON ep.maquina_id = m.id LEFT JOIN materiais mat ON ep.material_id = mat.id'.replace('structure_produto', 'estrutura_produto')).fetchall()
     conn.close()
     return render_template('engenharia.html', produtos=prods, maquinas=maqs, materiais=mats, composicoes=comps)
 
@@ -323,6 +350,7 @@ def deletar_item_estrutura(id):
     conn.close()
     return redirect(url_for('engenharia'))
 
+# --- ROTAS DA PÁGINA 6: FORMAÇÃO DE PREÇOS ---
 @app.route('/precificacao')
 def precificacao():
     conn = get_db_connection()
@@ -338,6 +366,7 @@ def salvar_preco():
     conn.commit()
     conn.close()
     return redirect(url_for('precificacao'))
+# --- ROTAS DAS PÁGINAS 7 E 8: VENDAS E ESTOQUE INTEGRADOS ---
 @app.route('/vendas')
 def vendas():
     conn = get_db_connection()
@@ -350,48 +379,103 @@ def vendas():
 def estoque():
     conn = get_db_connection()
     itens = conn.execute('SELECT p.id AS produto_id, p.codigo_produto, p.nome_produto, COALESCE(ep.quantidade_disponivel, 0) AS quantidade_disponivel FROM produtos p LEFT JOIN estoque_produtos ep ON p.id = ep.produto_id').fetchall()
+    peds = conn.execute("SELECT pv.*, p.codigo_produto, p.nome_produto FROM pedidos_vendas pv JOIN produtos p ON pv.produto_id = p.id WHERE pv.observacoes LIKE '%SOB ENCOMENDA%' AND pv.id NOT IN (SELECT DISTINCT pedido_id FROM ordens_processo WHERE status='Finalizado e Armazenado')").fetchall()
     conn.close()
-    return render_template('estoque.html', estoque_itens=itens)
-
-@app.route('/abastecer_estoque', methods=['POST'])
-def abastecer_estoque():
-    prod_id = int(request.form['produto_id'])
-    qtd = float(request.form['quantidade_abastecer'])
-    conn = get_db_connection()
-    est = conn.execute('SELECT * FROM estoque_produtos WHERE produto_id = ?', (prod_id,)).fetchone()
-    if not est: conn.execute('INSERT INTO estoque_produtos (produto_id, quantidade_disponivel) VALUES (?, ?)', (prod_id, qtd))
-    else: conn.execute('UPDATE estoque_produtos SET quantidade_disponivel = quantidade_disponivel + ? WHERE produto_id = ?', (qtd, prod_id))
-    conn.commit()
-    conn.close()
-    return redirect(url_for('estoque'))
+    return render_template('estoque.html', estoque_itens=itens, pedidos=peds)
 
 @app.route('/lancar_venda', methods=['POST'])
 def lancar_venda():
     prod_id = int(request.form['produto_id'])
     qtd = int(request.form['quantidade'])
+    desconto = float(request.form['desconto_percentual'] or 0)
+    observacoes = request.form['observacoes']
+    
     conn = get_db_connection()
     est = conn.execute('SELECT quantidade_disponivel FROM estoque_produtos WHERE produto_id = ?', (prod_id,)).fetchone()
     estoque_atual = est['quantidade_disponivel'] if est else 0
-    if estoque_atual < qtd:
+    
+    if estoque_atual >= qtd:
+        conn.execute('UPDATE estoque_produtos SET quantidade_disponivel = quantidade_disponivel - ? WHERE produto_id = ?', (qtd, prod_id))
+        conn.execute('INSERT INTO pedidos_vendas (produto_id, quantidade, desconto_percentual, observacoes) VALUES (?, ?, ?, ?)', (prod_id, qtd, desconto, f"{observacoes} (Pronta Entrega - Baixa Automática)"))
+        conn.commit()
         conn.close()
-        return "Erro Pedagógico: Saldo de estoque insuficiente!"
-    conn.execute('UPDATE estoque_produtos SET quantidade_disponivel = quantidade_disponivel - ? WHERE produto_id = ?', (qtd, prod_id))
-    conn.execute('INSERT INTO pedidos_vendas (produto_id, quantidade, desconto_percentual, observacoes) VALUES (?, ?, ?, ?)', (prod_id, qtd, float(request.form['desconto_percentual'] or 0), request.form['observacoes']))
-    conn.commit()
-    conn.close()
+        flash('Venda efetivada com sucesso! Produto retirado do estoque disponível.', 'success')
+    else:
+        tempo_maquina = conn.execute('SELECT COALESCE(SUM(tempo_processo_min), 15) as total_min FROM estrutura_produto WHERE produto_id = ?', (prod_id,)).fetchone()['total_min']
+        ops_na_fila = conn.execute("SELECT COUNT(*) as fila FROM ordens_processo WHERE status != 'Finalizado'").fetchone()['fila']
+        
+        minutos_totais = (tempo_maquina * qtd) * (1 + (ops_na_fila * 0.1))
+        dias_entrega = max(2, math.ceil(minutos_totais / 480))
+        
+        obs_encomenda = f"{observacoes} (SOB ENCOMENDA - Aguardando PCP. Prazo de Entrega Estimado: {dias_entrega} dias úteis)"
+        conn.execute('INSERT INTO pedidos_vendas (produto_id, quantidade, desconto_percentual, observacoes) VALUES (?, ?, ?, ?)', (prod_id, qtd, desconto, obs_encomenda))
+        conn.commit()
+        conn.close()
+        flash(f'Estoque insuficiente! Pedido registrado sob encomenda. Resposta do ERP - Prazo de Entrega: {dias_entrega} dias úteis.', 'warning')
+        
     return redirect(url_for('vendas'))
-
 @app.route('/deletar_venda/<int:id>', methods=['POST'])
 def deletar_venda(id):
     conn = get_db_connection()
-    ped = conn.execute('SELECT produto_id, quantidade FROM pedidos_vendas WHERE id = ?', (id,)).fetchone()
+    ped = conn.execute('SELECT produto_id, quantidade, observacoes FROM pedidos_vendas WHERE id = ?', (id,)).fetchone()
     if ped:
-        conn.execute('UPDATE estoque_produtos SET quantidade_disponivel = quantidade_disponivel + ? WHERE produto_id = ?', (ped['quantidade'], ped['produto_id']))
+        if "Pronta Entrega" in ped['observacoes']:
+            conn.execute('UPDATE estoque_produtos SET quantidade_disponivel = quantidade_disponivel + ? WHERE produto_id = ?', (ped['quantidade'], ped['produto_id']))
         conn.execute('DELETE FROM pedidos_vendas WHERE id = ?', (id,))
+        conn.execute('DELETE FROM ordens_processo WHERE pedido_id = ?', (id,))
         conn.commit()
     conn.close()
     return redirect(url_for('vendas'))
 
+@app.route('/solicitar_producao_pcp/<int:pedido_id>', methods=['POST'])
+def solicitar_producao_pcp(pedido_id):
+    conn = get_db_connection()
+    existe = conn.execute('SELECT id FROM ordens_processo WHERE pedido_id = ?', (pedido_id,)).fetchone()
+    if not existe:
+        ped = conn.execute('SELECT pv.*, p.codigo_produto, p.nome_produto FROM pedidos_vendas pv JOIN produtos p ON pv.produto_id = p.id WHERE pv.id = ?', (pedido_id,)).fetchone()
+        if ped:
+            rots = conn.execute('SELECT ep.*, m.nome_equipamento, m.custo_minuto_maquina, m.operador_nome FROM estrutura_produto ep LEFT JOIN maquinas m ON ep.maquina_id = m.id WHERE ep.produto_id = ? ORDER BY ep.id ASC', (ped['produto_id'],)).fetchall()
+            ponteiro_tempo = datetime.datetime.now()
+            for idx, r in enumerate(rots):
+                tempo_lote_min = float(r['tempo_processo_min'] or 0) * int(ped['quantidade'])
+                custo_total_operacao = tempo_lote_min * float(r['custo_minuto_maquina'] or 0.15)
+                entrada_str = ponteiro_tempo.strftime("%d/%m/%Y %H:%M")
+                saida_op = ponteiro_tempo + datetime.timedelta(minutes=tempo_lote_min)
+                saida_str = saida_op.strftime("%d/%m/%Y %H:%M")
+                
+                conn.execute('INSERT INTO ordens_processo (pedido_id, numero_operacao, maquina_name, codigo_produto, nome_produto, data_entrada, tempo_estimado_min, data_saida, status, custo_operacao, operador_nome) VALUES (?, ?, ?, ?, ?, ?, ?, ?, "Na Fila", ?, ?)', (pedido_id, f"OP {(idx+1)*10}", r['nome_equipamento'] or 'Bancada Manual', ped['codigo_produto'], ped['nome_produto'], entrada_str, tempo_lote_min, saida_str, custo_total_operacao, r['operador_nome'] or 'Pendente'))
+                ponteiro_tempo = saida_op
+            conn.commit()
+        flash('Ordem de Produção transmitida com sucesso para o painel do PCP!', 'success')
+    else:
+        flash('Este pedido já possui ordens de processo ativas no chão de fábrica.', 'info')
+    conn.close()
+    return redirect(url_for('estoque'))
+
+@app.route('/abastecer_estoque_pcp', methods=['POST'])
+def abastecer_estoque_pcp():
+    prod_id = int(request.form['produto_id'])
+    pedido_id = int(request.form['pedido_id'])
+    qtd = float(request.form['quantidade_abastecer'])
+    conn = get_db_connection()
+    
+    ops_existentes = conn.execute('SELECT COUNT(*) as total FROM ordens_processo WHERE pedido_id = ?', (pedido_id,)).fetchone()['total']
+    ops_pendentes = conn.execute("SELECT COUNT(*) as pendentes FROM ordens_processo WHERE pedido_id = ? AND status != 'Finalizado'", (pedido_id,)).fetchone()['pendentes']
+    
+    if ops_existentes == 0 or ops_pendentes > 0:
+        conn.close()
+        flash('Bloqueio de Qualidade ERP: O Almoxarifado não pode receber este lote! Existem operações pendentes ou a ordem de produção não foi disparada ao PCP.', 'danger')
+        return redirect(url_for('estoque'))
+        
+    est = conn.execute('SELECT * FROM estoque_produtos WHERE produto_id = ?', (prod_id,)).fetchone()
+    if not est: conn.execute('INSERT INTO estoque_produtos (produto_id, quantidade_disponivel) VALUES (?, ?)', (prod_id, qtd))
+    else: conn.execute('UPDATE estoque_produtos SET quantidade_disponivel = quantidade_disponivel + ? WHERE produto_id = ?', (qtd, prod_id))
+    
+    conn.execute("UPDATE ordens_processo SET status = 'Finalizado e Armazenado' WHERE pedido_id = ?", (pedido_id,))
+    conn.commit()
+    conn.close()
+    flash('Recebimento efetuado! Lote finalizado pelo PCP e integrado com sucesso ao estoque disponível.', 'success')
+    return redirect(url_for('estoque'))
 @app.route('/imprimir_nf/<int:pedido_id>')
 def imprimir_nf(pedido_id):
     conn = get_db_connection()
@@ -406,20 +490,25 @@ def imprimir_nf(pedido_id):
 @app.route('/pcp')
 def pcp():
     conn = get_db_connection()
-    novas = conn.execute('SELECT pv.id AS pedido_id, pv.quantidade, p.codigo_produto, p.nome_produto, p.id AS prod_id FROM pedidos_vendas pv JOIN produtos p ON pv.produto_id = p.id WHERE pv.id NOT IN (SELECT DISTINCT pedido_id FROM ordens_processo)').fetchall()
-    for v in novas:
-        rots = conn.execute('SELECT ep.*, m.nome_equipamento FROM estrutura_produto ep LEFT JOIN maquinas m ON ep.maquina_id = m.id WHERE ep.produto_id = ?', (v['prod_id'],)).fetchall()
-        for idx, r in enumerate(rots):
-            conn.execute('INSERT INTO ordens_processo (pedido_id, numero_operacao, maquina_nome, codigo_produto, nome_produto, tempo_estimado_min) VALUES (?, ?, ?, ?, ?, ?)', (v['pedido_id'], f"OP {(idx+1)*10}", r['nome_equipamento'] or 'Bancada Manual', v['codigo_produto'], v['nome_produto'], r['tempo_processo_min'] * v['quantidade']))
-    ords = conn.execute('SELECT * FROM ordens_processo ORDER BY id ASC').fetchall()
+    ords = conn.execute('SELECT * FROM ordens_processo ORDER BY pedido_id ASC, id ASC').fetchall()
     conn.close()
     return render_template('pcp.html', ordens=ords)
 
 @app.route('/dar_baixa_op/<int:id>', methods=['POST'])
 def dar_baixa_op(id):
-    agora = datetime.datetime.now().strftime("%d/%m/%Y %H:%M")
     conn = get_db_connection()
-    conn.execute('UPDATE ordens_processo SET data_saida = ?, operador_nome = ?, status = "Finalizado" WHERE id = ?', (agora, request.form['operador_nome'], id))
+    conn.execute('UPDATE ordens_processo SET operador_nome = ?, status = "Finalizado" WHERE id = ?', (request.form['operador_nome'], id))
+    
+    op_atual = conn.execute('SELECT * FROM ordens_processo WHERE id = ?', (id,)).fetchone()
+    agora_real = datetime.datetime.now()
+    proxima_op = conn.execute('SELECT * FROM ordens_processo WHERE pedido_id = ? AND id > ? ORDER BY id ASC LIMIT 1', (op_atual['pedido_id'], id)).fetchone()
+    
+    if proxima_op:
+        nova_entrada = agora_real.strftime("%d/%m/%Y %H:%M")
+        nova_saida = agora_real + datetime.timedelta(minutes=float(proxima_op['tempo_estimado_min']))
+        nova_saida_str = nova_saida.strftime("%d/%m/%Y %H:%M")
+        conn.execute('UPDATE ordens_processo SET data_entrada = ?, data_saida = ? WHERE id = ?', (nova_entrada, nova_saida_str, proxima_op['id']))
+        
     conn.commit()
     conn.close()
     return redirect(url_for('pcp'))
