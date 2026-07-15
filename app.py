@@ -27,6 +27,7 @@ def init_db():
 
     # Tabela de Máquinas e Equipamentos (Página 3)
     cursor.execute('CREATE TABLE IF NOT EXISTS maquinas (id INTEGER PRIMARY KEY AUTOINCREMENT, nome_equipamento TEXT NOT NULL, potencia REAL NOT NULL, consumo_eletrico REAL NOT NULL, velocidade TEXT, avanco TEXT, comprimento_max REAL, diametro_max REAL, frequencia_manutencao INTEGER NOT NULL, horas_trabalhadas INTEGER DEFAULT 0, preco_compra REAL NOT NULL, depreciacao_mensal REAL NOT NULL, valor_venda_final REAL NOT NULL, custo_minuto_maquina REAL NOT NULL)')
+    
     # Tabela de Materiais e Insumos (Página 4)
     cursor.execute('CREATE TABLE IF NOT EXISTS materiais (id INTEGER PRIMARY KEY AUTOINCREMENT, codigo_material TEXT UNIQUE NOT NULL, nome_material TEXT NOT NULL, preco_unidade REAL NOT NULL, dimensoes TEXT, volume_disponivel REAL NOT NULL)')
         
@@ -45,7 +46,7 @@ def init_db():
     # Tabela de Estoque de Produtos Acabados (Página 8)
     cursor.execute('CREATE TABLE IF NOT EXISTS estoque_produtos (id INTEGER PRIMARY KEY AUTOINCREMENT, produto_id INTEGER UNIQUE NOT NULL, quantidade_disponivel REAL DEFAULT 0, FOREIGN KEY(produto_id) REFERENCES produtos(id))')
         
-    # Tabela de Pedidos de Vendas (Página 7 - Corrigida coluna para quantidade)
+    # Tabela de Pedidos de Vendas (Página 7)
     cursor.execute('CREATE TABLE IF NOT EXISTS pedidos_vendas (id INTEGER PRIMARY KEY AUTOINCREMENT, produto_id INTEGER NOT NULL, quantidade INTEGER NOT NULL, desconto_percentual REAL DEFAULT 0, observacoes TEXT, data_pedido TIMESTAMP DEFAULT CURRENT_TIMESTAMP, FOREIGN KEY(produto_id) REFERENCES produtos(id))')
         
     # Tabela do Sequenciamento PCP (Página 9)
@@ -126,6 +127,7 @@ def alterar_maquina(id):
     conn.commit()
     conn.close()
     return redirect(url_for('maquinas'))
+
 # --- ROTAS DE REQUISIÇÕES DE COMPRAS ---
 @app.route('/salvar_requisicao', methods=['POST'])
 def salvar_requisicao():
@@ -291,6 +293,7 @@ def estoque():
     itens = conn.execute('SELECT p.id AS produto_id, p.codigo_produto, p.nome_produto, COALESCE(ep.quantidade_disponivel, 0) AS quantidade_disponivel FROM produtos p LEFT JOIN estoque_produtos ep ON p.id = ep.produto_id').fetchall()
     conn.close()
     return render_template('estoque.html', estoque_itens=itens)
+
 @app.route('/abastecer_estoque', methods=['POST'])
 def abastecer_estoque():
     prod_id = int(request.form['produto_id'])
@@ -357,11 +360,11 @@ def pcp():
     conn.close()
     return render_template('pcp.html', ordens=ords)
 
-@app.route('/dar_baixa_op/<int:op_id>', methods=['POST'])
-def dar_baixa_op(op_id):
+@app.route('/dar_baixa_op/<int:id>', methods=['POST'])
+def dar_baixa_op(id):
     agora = datetime.datetime.now().strftime("%d/%m/%Y %H:%M")
     conn = get_db_connection()
-    conn.execute('UPDATE ordens_processo SET data_saida = ?, operador_nome = ?, status = "Finalizado" WHERE id = ?', (agora, request.form['operador_nome'], op_id))
+    conn.execute('UPDATE ordens_processo SET data_saida = ?, operador_nome = ?, status = "Finalizado" WHERE id = ?', (agora, request.form['operador_nome'], id))
     conn.commit()
     conn.close()
     return redirect(url_for('pcp'))
@@ -372,11 +375,6 @@ def roi():
     v_dados = conn.execute('SELECT SUM((fp.preco_venda_final * pv.quantidade) * (1 - pv.desconto_percentual/100)) AS receita_bruta, SUM(pv.quantidade) AS total_pecas FROM pedidos_vendas pv JOIN formacao_precos fp ON pv.produto_id = fp.produto_id').fetchone()
     invs = conn.execute('SELECT SUM(valor_terreno + valor_instalacoes) AS cap_imobilizado FROM investimentos_imobiliarios').fetchone()
     conn.close()
+    
     rec = v_dados['receita_bruta'] if v_dados and v_dados['receita_bruta'] else 0
     pecas = v_dados['total_pecas'] if v_dados and v_dados['total_pecas'] else 0
-    cap = invs['cap_imobilizado'] if invs and invs['cap_imobilizado'] else 0
-    lucro = rec * 0.15
-    return render_template('roi.html', receita=rec, pecas=pecas, capital=cap, lucro_acionistas=lucro, payback_real=(cap / lucro) if lucro > 0 else 0)
-
-if __name__ == '__main__':
-    app.run(debug=True)
