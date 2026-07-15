@@ -7,16 +7,18 @@
 </head>
 <body>
 
+<!-- Barra de Acessibilidade Superior Oficial -->
 <div class="barra-acessibilidade">
     <button class="btn-acessibilidade" onclick="alternarAltoContraste()">Acessibilidade 🌓 Alto Contraste</button>
     <button class="btn-acessibilidade" onclick="mudarFonte(1)">A+</button>
     <button class="btn-acessibilidade" onclick="mudarFonte(-1)">A-</button>
 </div>
 
+<!-- Cabeçalho Principal Terceiro ADM Associados -->
 <header class="cabecalho-corporativo">
     <div class="identidade-container">
         <div class="branding-flex">
-            <img src="{{ url_for('static', filename='logo.png') }}" alt="Logo" style="height: 65px; width: auto; object-fit: contain; border-radius: 4px;">
+            <img src="{{ url_for('static', filename='logo.png') }}" alt="Logo TERADMAS" style="height: 65px; width: auto; object-fit: contain; border-radius: 4px;">
             <div class="texto-empresa">
                 <h1>TERCEIRO ADM ASSOCIADOS</h1>
                 <p>Gerenciador de Pessoal | Abordagem Pedagógico-Didática de Custos</p>
@@ -25,6 +27,7 @@
         <button class="menu-hamburguer" onclick="alternarMenuMobile()">☰</button>
     </div>
 
+    <!-- Navegação Responsiva com Menus Dropdown Unificados -->
     <nav class="nav-container" id="menuNavegacao">
         <ul class="menu-cascata">
             <li class="item-menu">
@@ -32,31 +35,25 @@
                 <ul class="sub-menu">
                     <li><a href="/estrutura">1. Investimentos Imobiliários</a></li>
                     <li><a href="/maquinas">2. Engenharia de Ativos (Máquinas)</a></li>
-                    <li><a href="/rh">👥 3. Gestão de Pessoal (RH)</a></li>
-                    <li><a href="/requisicoes">📋 4. Central de Requisições</a></li>
-                    <li><a href="/compras">🛒 5. Cockpit de Suprimentos</a></li>
-                    <li><a href="/materiais">6. Almoxarifado (Materiais)</a></li>
+                    <li><a href="/rh" style="background: #eef9ff; color: #007bff; font-weight: bold;">👥 3. Gestão de Pessoal (RH)</a></li>
+                    <li><a href="/financeiro">💰 4. Fluxo Financeiro</a></li>
+                    <li><a href="/requisicoes">📋 5. Central de Requisições</a></li>
+                    <li><a href="/compras">🛒 6. Cockpit de Suprimentos</a></li>
+                    <li><a href="/materiais">7. Almoxarifado (Materiais)</a></li>
                 </ul>
             </li>
             <li class="item-menu">
                 <a href="#" class="link-principal">🛠️ Custos & Engenharia ▾</a>
                 <ul class="sub-menu">
-                    <li><a href="/engenharia">7. Engenharia de Produto (BOM)</a></li>
-                    <li><a href="/precificacao">8. Controladoria e Precificação</a></li>
+                    <li><a href="/engenharia">8. Engenharia de Produto (BOM)</a></li>
+                    <li><a href="/precificacao">9. Controladoria e Precificação</a></li>
                 </ul>
             </li>
             <li class="item-menu">
                 <a href="#" class="link-principal">💰 Operações Comerciais ▾</a>
                 <ul class="sub-menu">
-                    <li><a href="/vendas">9. Painel de Vendas Comerciais</a></li>
-                    <li><a href="/estoque">10. Inventário de Acabados</a></li>
-                </ul>
-            </li>
-            <li class="item-menu">
-                <a href="#" class="link-principal">🏭 Chão de Fábrica & ROI ▾</a>
-                <ul class="sub-menu">
-                    <li><a href="/pcp">11. Planilha de Processos (PCP)</a></li>
-                    <li><a href="/roi">12. Indicadores de Retorno (ROI)</a></li>
+                    <li><a href="/vendas">10. Painel de Vendas Comerciais</a></li>
+                    <li><a href="/estoque">11. Inventário de Acabados</a></li>
                 </ul>
             </li>
         </ul>
@@ -65,77 +62,118 @@
 
 <div class="container">
     {% with m = get_flashed_messages(with_categories=true) %}{% if m %}{% for c, msg in m %}
-      <div class="alert alert-{{ c }}" style="padding:12px; margin-bottom:20px; font-weight:bold; background:#fff3cd;">{{ msg }}</div>
+      <div class="alert alert-{{ c }}" style="padding:12px; margin-bottom:20px; font-weight:bold; background:#fff3cd; border:1px solid #ccc; border-radius:4px;">{{ msg }}</div>
     {% endfor %}{% endif %}{% endwith %}
 
     <form id="formRH" action="/salvar_colaborador" method="POST">
         <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; margin-bottom: 25px;">
             
-            <div style="background: #f8f9fa; padding: 20px; border-radius: 8px; border-top: 4px solid #4f81bd;">
+            <!-- COLUNA 1: Gestão de Caixa & Cargos -->
+            <div style="background: #f8f9fa; padding: 20px; border-radius: 8px; border-top: 4px solid #4f81bd; box-shadow: 0 2px 4px rgba(0,0,0,0.05);">
                 <h3>Gestão de Caixa & Cargos</h3>
-                <div class="form-group"><label>Mês de Referência:</label><select class="form-control"><option>Julho</option></select></div>
-                <div class="form-group"><label>Receita Mensal (R$):</label><input type="number" id="receita_mensal" value="150000" class="form-control"></div>
-                <div class="form-group"><label>Limite de Pessoal:</label><input type="number" value="10" class="form-control"></div>
+                <div class="form-group" style="margin-bottom: 12px;"><label>Mês de Referência:</label><select class="form-control"><option>Julho</option></select></div>
+                <div class="form-group" style="margin-bottom: 12px;"><label>Receita Mensal (R$):</label><input type="number" id="receita_mensal" value="150000" class="form-control"></div>
+                <div class="form-group" style="margin-bottom: 12px;"><label>Limite de Pessoal:</label><input type="number" value="10" class="form-control"></div>
             </div>
 
-            <div style="background: #f8f9fa; padding: 20px; border-radius: 8px; border-top: 4px solid #4f81bd;">
+            <!-- COLUNA 2: Cadastro & Jornada -->
+            <div style="background: #f8f9fa; padding: 20px; border-radius: 8px; border-top: 4px solid #4f81bd; box-shadow: 0 2px 4px rgba(0,0,0,0.05);">
                 <h3>Cadastro & Jornada</h3>
-                <div class="form-group"><label>Nome Completo:</label><input type="text" name="nome_completo" required class="form-control" placeholder="Renato Silva"></div>
-                <div class="form-group">
+                <div class="form-group" style="margin-bottom: 10px;"><label>Nome Completo:</label><input type="text" name="nome_completo" required class="form-control" placeholder="Ex: Renato Silva"></div>
+                <div class="form-group" style="margin-bottom: 10px;">
                     <label>Cargo / Função Selecionável CLT:</label>
                     <select name="cargo_funcao" id="cargo_funcao_select" onchange="carregarDadosCargoSelecionado()" style="width:100%; padding:8px; border-radius:4px; border:1px solid #ccc;">
                         <option value="">-- Escolha o Cargo --</option>
-                        <option value="001 - Operador de Produção">001 - Torno / Operador</option>
-                        <option value="002 - Auxiliar de Produção">002 - Auxiliar Operacional</option>
-                        <option value="005 - Mecânico de Manutenção">005 - Mecânico Manutenção</option>
-                        <option value="006 - Soldador Industrial">006 - Soldador Mig/Tig</option>
+                        <option value="001 - Operador de Produção">001 - Operador de Produção</option>
+                        <option value="002 - Auxiliar de Produção">002 - Auxiliar de Produção</option>
+                        <option value="003 - Técnico de Produção">003 - Técnico de Produção</option>
+                        <option value="004 - Ferramenteiro">004 - Ferramenteiro</option>
+                        <option value="005 - Mecânico de Manutenção">005 - Mecânico de Manutenção</option>
+                        <option value="006 - Soldador Industrial">006 - Soldador Industrial</option>
+                        <option value="007 - Supervisor de Produção">007 - Supervisor de Produção</option>
                         <option value="008 - Torneiro Mecânico">008 - Torneiro Mecânico</option>
+                        <option value="009 - Fresador Universal">009 - Fresador Universal</option>
+                        <option value="010 - Técnico de Qualidade">010 - Técnico de Qualidade</option>
+                        <option value="015 - Operador de Empilhadeira">015 - Operador de Empilhadeira</option>
+                        <option value="021 - Comprador Industrial">021 - Comprador Industrial</option>
+                        <option value="022 - Assistente Administrativo">022 - Assistente Administrativo</option>
                     </select>
                 </div>
                 <div class="form-group"><label>Salário Base (R$):</label><input type="number" name="salario_base" id="salario_base" class="form-control" oninput="calcularHoleriteMatematico()"></div>
             </div>
-            <div style="background: #f8f9fa; padding: 20px; border-radius: 8px; border-top: 4px solid #4f81bd;">
+            <!-- COLUNA 3: Escala & Adicionais CLT -->
+            <div style="background: #f8f9fa; padding: 20px; border-radius: 8px; border-top: 4px solid #4f81bd; box-shadow: 0 2px 4px rgba(0,0,0,0.05);">
                 <h3>Escala & Adicionais CLT</h3>
-                <div class="form-group">
+                <div class="form-group" style="margin-bottom: 10px;">
                     <label>Turno Operacional:</label>
-                    <select id="turno_trabalho" onchange="calcularHoleriteMatematico()" class="form-control" style="width:100%; padding:8px; border:1px solid #ccc; border-radius:4px;">
+                    <select id="turno_trabalho" name="turno" onchange="calcularHoleriteMatematico()" class="form-control" style="width:100%; padding:8px; border:1px solid #ccc; border-radius:4px;">
                         <option value="Diurno">Diurno (Regular)</option>
                         <option value="Noturno">Noturno (+20% Noturno)</option>
                     </select>
                 </div>
-                <div class="form-group">
+                <div class="form-group" style="margin-bottom: 10px;">
                     <label>Dia da Escala (Fábrica):</label>
-                    <select id="dia_semana_trabalho" onchange="calcularHoleriteMatematico()" class="form-control" style="width:100%; padding:8px; border:1px solid #ccc; border-radius:4px;">
+                    <select id="dia_semana_trabalho" name="dia_semana" onchange="calcularHoleriteMatematico()" class="form-control" style="width:100%; padding:8px; border:1px solid #ccc; border-radius:4px;">
                         <option value="Regular">Dia Útil</option>
                         <option value="Sabado">Sábado (Extra 50%)</option>
                         <option value="Domingo">Domingo/Feriado (Extra 100%)</option>
                     </select>
                 </div>
-                <div class="form-group"><label>Horas Extras Acumuladas (h):</label><input type="number" id="horas_extras_qtd" value="0" class="form-control" oninput="calcularHoleriteMatematico()"></div>
-                <div class="form-group"><label>Insalubridade/Periculosidade (R$):</label><input type="number" id="valor_adicionais_clt" name="valor_adicionais" class="form-control" oninput="calcularHoleriteMatematico()"></div>
-                <div class="form-group"><label>Custo Minuto MOD (R$/min):</label><input type="number" step="0.0001" name="custo_minuto_operador" id="custo_minuto_operador_calculado" readonly class="form-control" style="background:#e9ecef; font-weight:bold;"></div>
-                <button type="submit" class="btn btn-success" style="width:100%; margin-top:10px;">Contratar Profissional</button>
+                <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 5px; margin-bottom: 10px;">
+                    <div class="form-group"><label>HE 25%:</label><input type="number" id="he_25" value="0" class="form-control" oninput="calcularHoleriteMatematico()"></div>
+                    <div class="form-group"><label>HE 50%:</label><input type="number" id="he_50" value="0" class="form-control" oninput="calcularHoleriteMatematico()"></div>
+                    <div class="form-group"><label>HE 100%:</label><input type="number" id="he_100" value="0" class="form-control" oninput="calcularHoleriteMatematico()"></div>
+                </div>
+                <div class="form-group" style="margin-bottom: 10px;"><label>Insalubridade/Periculosidade (R$):</label><input type="number" id="valor_adicionais_clt" name="valor_adicionais" class="form-control" oninput="calcularHoleriteMatematico()"></div>
+                <div class="form-group" style="margin-bottom: 10px;"><label>Custo Minuto MOD (R$/min):</label><input type="number" step="0.0001" name="custo_minuto_operador" id="custo_minuto_operador_calculado" readonly class="form-control" style="background:#e9ecef; font-weight:bold;"></div>
+                <button type="submit" class="btn btn-success" style="width:100%; font-weight:bold; margin-top:10px;">Contratar Profissional</button>
             </div>
         </div>
     </form>
 
-    <!-- PAINEL DE RECIBO DINÂMICO DOS HOLERITES (CONFORME A IMAGEM) -->
-    <div style="background:white; padding:20px; border-radius:8px; box-shadow:0 2px 5px rgba(0,0,0,0.1); margin-bottom:25px;">
-        <h3>📋 Espelho de Recibo de Pagamento Detalhado (Holerite / Férias / 13º)</h3>
-        <div style="display:grid; grid-template-columns:1fr 1fr; gap:20px;">
+    <!-- CARDS DE ENGENHARIA FINANCEIRA -->
+    <div style="display: grid; grid-template-columns: repeat(5, 1fr); gap: 15px; margin-bottom: 25px; text-align: center;">
+        <div style="background: white; padding: 15px; border-radius: 6px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); border-top: 3px solid #ccc;"><small style="color:#666;">Funcionários Ativos</small><h4 style="margin:5px 0 0 0; color:#333;">1 / 10</h4></div>
+        <div style="background: white; padding: 15px; border-radius: 6px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); border-top: 3px solid #ccc;"><small style="color:#666;">Custo Bruto Total</small><h4 id="card_bruto" style="margin:5px 0 0 0; color:#333;">R$ 0,00</h4></div>
+        <div style="background: white; padding: 15px; border-radius: 6px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); border-top: 3px solid #d9534f;"><small style="color:#666;">Impostos Retidos</small><h4 id="card_impostos" style="margin:5px 0 0 0; color:#d9534f;">R$ 0,00</h4></div>
+        <div style="background: white; padding: 15px; border-radius: 6px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); border-top: 3px solid #ccc;"><small style="color:#666;">Líquido Bancário</small><h4 id="card_liquido" style="margin:5px 0 0 0; color:#333;">R$ 0,00</h4></div>
+        <div style="background: white; padding: 15px; border-radius: 6px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); border-top: 3px solid #27ae60;"><small style="color:#27ae60;">Margem Disponível</small><h4 id="card_margem" style="margin:5px 0 0 0; color:#27ae60; font-weight:bold;">R$ 150.000,00</h4></div>
+    </div>
+
+    <!-- PAINEL DE RECIBO ESPELHO CLT DETALHADO -->
+    <div style="background:white; padding:20px; border-radius:8px; box-shadow:0 2px 5px rgba(0,0,0,0.1); margin-bottom:25px; border-left: 5px solid #2b5797;">
+        <h3>📄 Espelho de Recibo de Pagamento Detalhado (Holerite / Férias / 13º)</h3>
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:20px; font-family: monospace;">
             <div>
                 <p>(+) Salário Base Comercial: <span id="recibo_base" style="font-weight:bold;">R$ 0,00</span></p>
                 <p>(+) Médias de Horas Extras: <span id="recibo_he" style="font-weight:bold;">R$ 0,00</span></p>
                 <p>(+) Adicionais de Risco/CLT: <span id="recibo_adicionais" style="font-weight:bold;">R$ 0,00</span></p>
-                <p><strong>TOTAL PROVENTOS (CRÉDITOS): <span id="recibo_total_credito" style="color:green;">R$ 0,00</span></strong></p>
+                <p style="font-size:14px;"><strong>TOTAL PROVENTOS (CRÉDITOS): <span id="recibo_total_credito" style="color:green;">R$ 0,00</span></strong></p>
             </div>
             <div>
                 <p>(-) Desconto INSS Progressivo: <span id="recibo_inss" style="font-weight:bold; color:red;">R$ 0,00</span></p>
                 <p>(-) Retenção IRRF na Fonte: <span id="recibo_irrf" style="font-weight:bold; color:red;">R$ 0,00</span></p>
-                <p><strong>VALOR LÍQUIDO DISPONÍVEL: <span id="recibo_liquido" style="color:blue; font-size:18px;">R$ 0,00</span></strong></p>
+                <p style="font-size:15px;"><strong>VALOR LÍQUIDO DISPONÍVEL: <span id="recibo_liquido" style="color:blue; font-weight:bold;">R$ 0,00</span></strong></p>
             </div>
         </div>
     </div>
+    <!-- SEÇÃO DE ANÁLISE GRÁFICA MACROECONÔMICA -->
+    <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px; margin-bottom: 25px;">
+        <div style="background:white; padding:15px; border-radius:6px; min-height:180px; text-align:center; box-shadow:0 1px 3px rgba(0,0,0,0.1);">
+            <small style="color:#2b5797; font-weight:bold;">📊 Divisão Macroeconômica (Pizza)</small>
+            <div style="width:70px; height:70px; background:#27ae60; border-radius:50%; margin:25px auto;"></div>
+        </div>
+        <div style="background:white; padding:15px; border-radius:6px; min-height:180px; text-align:center; box-shadow:0 1px 3px rgba(0,0,0,0.1);">
+            <small style="color:#2b5797; font-weight:bold;">📊 Análise de Pareto por Cargo</small>
+            <div style="border-bottom:2px solid #ccc; width:80%; margin:45px auto 0 auto;"></div>
+        </div>
+        <div style="background:white; padding:15px; border-radius:6px; min-height:180px; text-align:center; box-shadow:0 1px 3px rgba(0,0,0,0.1);">
+            <small style="color:#2b5797; font-weight:bold;">📊 Elasticidade de Salário Bruto</small>
+            <div style="border-bottom:2px solid #ccc; width:80%; margin:45px auto 0 auto;"></div>
+        </div>
+    </div>
+
+    <!-- TABELA DO QUADRO CORPORATIVO -->
     <h3>Quadro Corporativo Corrente</h3>
     <table class="data-table">
         <thead>
@@ -143,7 +181,7 @@
                 <th>Funcionário / Admissão</th>
                 <th>Posto Operacional Alocado</th>
                 <th>Escala / Turno</th>
-                <th>MOD por Minuto</th>
+                <th>Ações de Impressão (Holerite / Férias / 13º)</th>
                 <th>Ações Legais CLT e Rescisórias</th>
             </tr>
         </thead>
@@ -151,14 +189,20 @@
             {% for col in colaboradores %}
             <tr>
                 <td><strong>{{ col.operador_nome }}</strong></td>
-                <td>{{ col.nome_equipment or col.nome_equipamento }}</td>
+                <td>{{ col.nome_equipamento }}</td>
                 <td>{{ col.turno_trabalho }} | Dia: {{ col.dia_semana }}</td>
-                <td><strong>R$ {{ "%.4f"|format(col.custo_minuto_operador) }}/min</strong></td>
                 <td>
-                    <div style="display:flex; gap:5px;">
-                        <form action="/calcular_rescisao/{{ col.id }}/justa_causa" method="POST"><button class="btn btn-danger" style="font-size:10px; padding:4px;">⚠️ Justa Causa</button></form>
-                        <form action="/calcular_rescisao/{{ col.id }}/voluntaria" method="POST"><button class="btn btn-primary" style="font-size:10px; padding:4px; background:#f39c12;">🚪 Demissão Voluntária</button></form>
-                        <form action="/calcular_rescisao/{{ col.id }}/demissao" method="POST"><button class="btn btn-danger" style="font-size:10px; padding:4px;">❌ Demitir sem Justa Causa</button></form>
+                    <div style="display: flex; gap: 5px; flex-wrap: wrap;">
+                        <a href="/imprimir_holerite/{{ col.id }}/mensal" target="_blank" class="btn btn-primary" style="font-size: 10px; padding: 4px; background: #2b5797; text-decoration: none;">🖨️ Mensal</a>
+                        <a href="/imprimir_holerite/{{ col.id }}/ferias" target="_blank" class="btn btn-success" style="font-size: 10px; padding: 4px; background: #27ae60; text-decoration: none;">🌴 Férias</a>
+                        <a href="/imprimir_holerite/{{ col.id }}/decimo" target="_blank" class="btn btn-primary" style="font-size: 10px; padding: 4px; background: #007bff; text-decoration: none;">🎄 13º</a>
+                    </div>
+                </td>
+                <td>
+                    <div style="display:flex; gap:3px;">
+                        <form action="/calcular_rescisao/{{ col.id }}/justa_causa" method="POST"><button class="btn btn-danger" style="font-size:9px; padding:3px;">⚠️ Justa Causa</button></form>
+                        <form action="/calcular_rescisao/{{ col.id }}/voluntaria" method="POST"><button class="btn btn-primary" style="font-size:9px; padding:3px; background:#f39c12;">🚪 Voluntária</button></form>
+                        <form action="/calcular_rescisao/{{ col.id }}/demissao" method="POST"><button class="btn btn-danger" style="font-size:9px; padding:3px;">❌ Sem Justa</button></form>
                     </div>
                 </td>
             </tr>
@@ -169,12 +213,12 @@
 
 <script>
 const bancoCargosCLT = {
-    "001 - Operador de Production": { base: 1850.00, adicional: 282.40 }, // Adicionais e bases indexados
     "001 - Operador de Produção": { base: 1850.00, adicional: 282.40 },
     "002 - Auxiliar de Produção": { base: 1512.00, adicional: 282.40 },
     "005 - Mecânico de Manutenção": { base: 3100.00, adicional: 930.00 },
     "006 - Soldador Industrial": { base: 2600.00, adicional: 564.80 },
-    "008 - Torneiro Mecânico": { base: 2900.00, adicional: 282.40 }
+    "008 - Torneiro Mecânico": { base: 2900.00, adicional: 282.40 },
+    "009 - Fresador Universal": { base: 2900.00, adicional: 282.40 }
 };
 
 function carregarDadosCargoSelecionado() {
@@ -191,69 +235,47 @@ function calcularHoleriteMatematico() {
     const adic = parseFloat(document.getElementById('valor_adicionais_clt').value) || 0;
     const t = document.getElementById('turno_trabalho').value;
     const d = document.getElementById('dia_semana_trabalho').value;
-    const heQtd = parseFloat(document.getElementById('horas_extras_qtd').value) || 0;
+    const he25 = parseFloat(document.getElementById('he_25').value) || 0;
+    const he50 = parseFloat(document.getElementById('he_50').value) || 0;
+    const he100 = parseFloat(document.getElementById('he_100').value) || 0;
     
     let horaBase = base / 220;
-    let multHe = d === "Regular" ? 1.5 : 2.0;
-    let multNoturno = t === "Noturno" ? 1.2 : 1.0;
+    let multNoturno = t === "Noturno" ? 1.20 : 1.00;
+    let heTotal = (he25 * horaBase * 1.25) + (he50 * horaBase * 1.50) + (he100 * horaBase * 2.00);
     
-    let heValor = heQtd * (horaBase * multHe);
-    let proventos = base + adic + heValor;
+    let proventos = base + adic + heTotal;
     let inss = proventos * 0.11;
     let irrf = proventos > 2250 ? (proventos * 0.075) : 0;
     let liq = proventos - inss - irrf;
     
     let c_min = ((base + adic) / (176 * 60)) * multNoturno;
-    if(d !== "Regular") c_min *= 1.5;
+    if(d === "Sabado") c_min *= 1.50;
+    if(d === "Domingo") c_min *= 2.00;
     
     document.getElementById('custo_minuto_operador_calculado').value = c_min.toFixed(4);
     document.getElementById('recibo_base').innerText = "R$ " + base.toFixed(2);
-    document.getElementById('recibo_he').innerText = "R$ " + heValor.toFixed(2);
+    document.getElementById('recibo_he').innerText = "R$ " + heTotal.toFixed(2);
     document.getElementById('recibo_adicionais').innerText = "R$ " + adic.toFixed(2);
     document.getElementById('recibo_total_credito').innerText = "R$ " + proventos.toFixed(2);
     document.getElementById('recibo_inss').innerText = "R$ " + inss.toFixed(2);
     document.getElementById('recibo_irrf').innerText = "R$ " + irrf.toFixed(2);
     document.getElementById('recibo_liquido').innerText = "R$ " + liq.toFixed(2);
+    
+    document.getElementById('card_bruto').innerText = "R$ " + proventos.toFixed(2);
+    document.getElementById('card_impostos').innerText = "R$ " + (inss + irrf).toFixed(2);
+    document.getElementById('card_liquido').innerText = "R$ " + liq.toFixed(2);
+    document.getElementById('card_margem').innerText = "R$ " + (150000 - proventos).toFixed(2);
 }
 
 function alternarMenuMobile() { document.getElementById('menuNavegacao').classList.toggle('ativo'); }
-let f = 100;
-function mudarFonte(d) { f += (d * 10); if(f >= 70 && f <= 160) document.body.style.fontSize = f + "%"; }
+let tam = 100;
+function mudarFonte(d) { tam += (d * 10); if(tam >= 70 && tam <= 160) document.body.style.fontSize = tam + "%"; }
 function alternarAltoContraste() {
     const b = document.body;
     if (b.style.filter === "invert(1) contrast(1.2)") { b.style.filter = "none"; } 
     else { b.style.filter = "invert(1) contrast(1.2)"; }
 }
 window.onload = calcularHoleriteMatematico;
-</script>
-
-  <script>
-    // Função para abrir e fechar o menu hambúrguer no celular
-    function alternarMenuMobile() {
-        const menu = document.getElementById('menuNavegacao');
-        menu.classList.toggle('ativo');
-    }
-
-    // Controle do tamanho das fontes para as Big TVs ou baixa visão
-    let tamanhoAtual = 100;
-    function mudarFonte(direcao) {
-        tamanhoAtual += (direcao * 10);
-        if(tamanhoAtual >= 70 && tamanhoAtual <= 160) {
-            document.body.style.fontSize = tamanhoAtual + "%";
-        }
-    }
-
-    // Controle do modo de alto contraste
-    function alternarAltoContraste() {
-        const corpo = document.body;
-        if (corpo.style.filter === "invert(1) contrast(1.2)") {
-            corpo.style.filter = "none";
-            corpo.style.backgroundColor = "";
-        } else {
-            corpo.style.filter = "invert(1) contrast(1.2)";
-            corpo.style.backgroundColor = "black";
-        }
-    }
 </script>
 </body>
 </html>
