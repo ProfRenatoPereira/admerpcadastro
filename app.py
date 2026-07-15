@@ -6,7 +6,6 @@ from flask import Flask, render_template, request, redirect, url_for, flash
 app = Flask(__name__)
 app.secret_key = 'chave_secreta_pedagogica'
 
-# Caminho para o banco de dados SQLite
 DATABASE = 'database.db'
 
 def get_db_connection():
@@ -19,10 +18,9 @@ def init_db():
     conn = get_db_connection()
     cursor = conn.cursor()
 
-    # Tabela de Usuários (Anulada no uso, mantida para estrutura)
     cursor.execute('CREATE TABLE IF NOT EXISTS usuarios (id INTEGER PRIMARY KEY AUTOINCREMENT, usuario TEXT UNIQUE NOT NULL, senha TEXT NOT NULL, aprovado INTEGER DEFAULT 0)')
 
-    # Tabela de Investimentos Imobiliários Modificada (Página 2)
+    # Tabela imobiliaria atualizada
     cursor.execute('''
         CREATE TABLE IF NOT EXISTS investimentos_imobiliarios (
             id INTEGER PRIMARY KEY AUTOINCREMENT, 
@@ -36,39 +34,23 @@ def init_db():
             perc_acionistas REAL NOT NULL
         )
     ''')
-    # Tabela de Máquinas e Equipamentos (Página 3)
-    cursor.execute('CREATE TABLE IF NOT EXISTS maquinas (id INTEGER PRIMARY KEY AUTOINCREMENT, nome_equipamento TEXT NOT NULL, potencia REAL NOT NULL, consumo_eletrico REAL NOT NULL, velocidade TEXT, avanco TEXT, comprimento_max REAL, diametro_max REAL, frequencia_manutencao INTEGER NOT NULL, horas_trabalhadas INTEGER DEFAULT 0, preco_compra REAL NOT NULL, depreciacao_mensal REAL NOT NULL, valor_venda_final REAL NOT NULL, custo_minuto_maquina REAL NOT NULL)')
-    
-    # Tabela de Materiais e Insumos (Página 4)
-    cursor.execute('CREATE TABLE IF NOT EXISTS materiais (id INTEGER PRIMARY KEY AUTOINCREMENT, codigo_material TEXT UNIQUE NOT NULL, nome_material TEXT NOT NULL, preco_unidade REAL NOT NULL, dimensoes TEXT, volume_disponivel REAL NOT NULL)')
-        
-    # Tabela de Novas Requisições de Compras de Ativos (Inovação Tecnológica)
-    cursor.execute('CREATE TABLE IF NOT EXISTS requisicoes_compras (id INTEGER PRIMARY KEY AUTOINCREMENT, equipamento_tipo TEXT NOT NULL, especificacao_desejada TEXT NOT NULL, quantidade INTEGER DEFAULT 1, status TEXT DEFAULT "Pendente em Cotação", preco_cotado REAL DEFAULT 0, potencia_cotada REAL DEFAULT 0, depreciacao_sugerida REAL DEFAULT 0, data_requisicao TIMESTAMP DEFAULT CURRENT_TIMESTAMP)')
 
-    # Tabela Principal do Produto (Página 5)
+    cursor.execute('CREATE TABLE IF NOT EXISTS maquinas (id INTEGER PRIMARY KEY AUTOINCREMENT, nome_equipamento TEXT NOT NULL, potencia REAL NOT NULL, consumo_eletrico REAL NOT NULL, velocidade TEXT, avanco TEXT, comprimento_max REAL, diametro_max REAL, frequencia_manutencao INTEGER NOT NULL, horas_trabalhadas INTEGER DEFAULT 0, preco_compra REAL NOT NULL, depreciacao_mensal REAL NOT NULL, valor_venda_final REAL NOT NULL, custo_minuto_maquina REAL NOT NULL)')
+    cursor.execute('CREATE TABLE IF NOT EXISTS materiais (id INTEGER PRIMARY KEY AUTOINCREMENT, codigo_material TEXT UNIQUE NOT NULL, nome_material TEXT NOT NULL, preco_unidade REAL NOT NULL, dimensoes TEXT, volume_disponivel REAL NOT NULL)')
+    cursor.execute('CREATE TABLE IF NOT EXISTS requisicoes_compras (id INTEGER PRIMARY KEY AUTOINCREMENT, equipamento_tipo TEXT NOT NULL, especificacao_desejada TEXT NOT NULL, quantidade INTEGER DEFAULT 1, status TEXT DEFAULT "Pendente em Cotação", preco_cotado REAL DEFAULT 0, potencia_cotada REAL DEFAULT 0, depreciacao_sugerida REAL DEFAULT 0, data_requisicao TIMESTAMP DEFAULT CURRENT_TIMESTAMP)')
     cursor.execute('CREATE TABLE IF NOT EXISTS produtos (id INTEGER PRIMARY KEY AUTOINCREMENT, codigo_produto TEXT UNIQUE NOT NULL, nome_produto TEXT NOT NULL, custo_total_fabricacao REAL DEFAULT 0)')
-        
-    # Tabela União/Roteiro (Página 5)
     cursor.execute('CREATE TABLE IF NOT EXISTS estrutura_produto (id INTEGER PRIMARY KEY AUTOINCREMENT, produto_id INTEGER NOT NULL, maquina_id INTEGER, material_id INTEGER, tempo_processo_min REAL DEFAULT 0, quantidade_material REAL DEFAULT 0, FOREIGN KEY(produto_id) REFERENCES produtos(id))')
-        
-    # Tabela de Formação de Preços (Página 6)
     cursor.execute('CREATE TABLE IF NOT EXISTS formacao_precos (id INTEGER PRIMARY KEY AUTOINCREMENT, produto_id INTEGER UNIQUE NOT NULL, imposto_municipal REAL DEFAULT 0, imposto_estadual REAL DEFAULT 0, imposto_federal REAL DEFAULT 0, margem_lucro REAL DEFAULT 0, preco_venda_final REAL DEFAULT 0, FOREIGN KEY(produto_id) REFERENCES produtos(id))')
-        
-    # Tabela de Estoque de Produtos Acabados (Página 8)
     cursor.execute('CREATE TABLE IF NOT EXISTS estoque_produtos (id INTEGER PRIMARY KEY AUTOINCREMENT, produto_id INTEGER UNIQUE NOT NULL, quantidade_disponivel REAL DEFAULT 0, FOREIGN KEY(produto_id) REFERENCES produtos(id))')
-        
-    # Tabela de Pedidos de Vendas (Página 7)
     cursor.execute('CREATE TABLE IF NOT EXISTS pedidos_vendas (id INTEGER PRIMARY KEY AUTOINCREMENT, produto_id INTEGER NOT NULL, quantidade INTEGER NOT NULL, desconto_percentual REAL DEFAULT 0, observacoes TEXT, data_pedido TIMESTAMP DEFAULT CURRENT_TIMESTAMP, FOREIGN KEY(produto_id) REFERENCES produtos(id))')
-        
-    # Tabela do Sequenciamento PCP (Página 9)
     cursor.execute('CREATE TABLE IF NOT EXISTS ordens_processo (id INTEGER PRIMARY KEY AUTOINCREMENT, pedido_id INTEGER NOT NULL, numero_operacao TEXT NOT NULL, maquina_nome TEXT NOT NULL, codigo_produto TEXT NOT NULL, nome_produto TEXT NOT NULL, data_entrada TIMESTAMP DEFAULT CURRENT_TIMESTAMP, tempo_estimado_min REAL NOT NULL, data_saida TEXT DEFAULT "Aguardando", operador_nome TEXT DEFAULT "Pendente", status TEXT DEFAULT "Na Fila", FOREIGN KEY(pedido_id) REFERENCES pedidos_vendas(id))')
-        
+    
     conn.commit()
     conn.close()
 
 if not os.path.exists(DATABASE):
     init_db()
-# --- ROTAS DE ACESSO DIRETO (SISTEMA DE SEGURANÇA ANULADO) ---
+
 @app.route('/')
 def index():
     return redirect(url_for('estrutura'))
@@ -80,7 +62,6 @@ def login():
 @app.route('/cadastrar_usuario', methods=['POST'])
 def cadastrar_usuario():
     return redirect(url_for('estrutura'))
-
 # --- ROTAS DA PÁGINA 2: INVESTIMENTOS IMOBILIÁRIOS MODIFICADAS ---
 @app.route('/estrutura')
 def estrutura():
@@ -105,6 +86,7 @@ def salvar_estrutura():
     conn.commit()
     conn.close()
     return redirect(url_for('estrutura'))
+
 @app.route('/alterar_estrutura/<int:id>', methods=['POST'])
 def alterar_estrutura(id):
     conn = get_db_connection()
@@ -129,7 +111,6 @@ def deletar_estrutura(id):
     conn.commit()
     conn.close()
     return redirect(url_for('estrutura'))
-
 # --- ROTAS DA PÁGINA 3: MAQUINÁRIOS ---
 @app.route('/maquinas')
 def maquinas():
@@ -144,28 +125,23 @@ def maquinas():
 def salvar_maquina():
     conn = get_db_connection()
     conn.execute('''
-        INSERT INTO maquinas 
-        (nome_equipamento, potencia, consumo_eletrico, velocidade, avanco, comprimento_max, diametro_max, 
-         frequencia_manutencao, horas_trabalhadas, preco_compra, depreciacao_mensal, valor_venda_final, custo_minuto_maquina) 
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-    ''', (request.form['nome_equipamento'], float(request.form['potencia']), float(request.form['consumo_eletrico']), request.form['velocidade'], request.form['avanco'], float(request.form['comprimento_max'] or 0), float(request.form['diametro_max'] or 0), int(request.form['frequencia_manutencao']), int(request.form['horas_trabalhadas'] or 0), float(request.form['preco_compra']), float(request.form['depreciacao_mensal']), float(request.form['valor_venda_final']), float(request.form['custo_minuto_maquina'])))
-    conn.commit()
-    conn.close()
-    return redirect(url_for('maquinas'))
-@app.route('/alterar_maquina/<int:id>', methods=['POST'])
-def alterar_maquina(id):
-    conn = get_db_connection()
-    conn.execute('''
-        UPDATE maquinas 
-        SET nome_equipamento=?, potencia=?, consumo_eletrico=?, velocidade=?, avanco=?, comprimento_max=?, 
-            diametro_max=?, frequencia_manutencao=?, horas_trabalhadas=?, preco_compra=?, depreciacao_mensal=?, 
-            valor_venda_final=?, custo_minuto_maquina=? WHERE id=?
-    ''', (request.form['nome_equipamento'], float(request.form['potencia']), float(request.form['consumo_eletrico']), request.form['velocidade'], request.form['avanco'], float(request.form['comprimento_max'] or 0), float(request.form['diametro_max'] or 0), int(request.form['frequencia_manutencao']), int(request.form['horas_trabalhadas'] or 0), float(request.form['preco_compra']), float(request.form['depreciacao_mensal']), float(request.form['valor_venda_final']), float(request.form['custo_minuto_maquina']), id))
+        INSERT INTO maquinas (nome_equipamento, potencia, consumo_eletrico, velocidade, avanco, comprimento_max, diametro_max, frequencia_manutencao, horas_trabalhadas, preco_compra, depreciacao_mensal, valor_venda_final, custo_minuto_maquina) 
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)''', 
+        (request.form['nome_equipamento'], float(request.form['potencia']), float(request.form['consumo_eletrico']), request.form['velocidade'], request.form['avanco'], float(request.form['comprimento_max'] or 0), float(request.form['diametro_max'] or 0), int(request.form['frequencia_manutencao']), int(request.form['horas_trabalhadas'] or 0), float(request.form['preco_compra']), float(request.form['depreciacao_mensal']), float(request.form['valor_venda_final']), float(request.form['custo_minuto_maquina'])))
     conn.commit()
     conn.close()
     return redirect(url_for('maquinas'))
 
-# --- ROTAS NOVAS: VIEWS DE REQUISIÇÕES E COCKPIT DE COMPRAS ---
+@app.route('/alterar_maquina/<int:id>', methods=['POST'])
+def alterar_maquina(id):
+    conn = get_db_connection()
+    conn.execute('''
+        UPDATE maquinas SET nome_equipamento=?, potencia=?, consumo_eletrico=?, velocidade=?, avanco=?, comprimento_max=?, diametro_max=?, frequencia_manutencao=?, horas_trabalhadas=?, preco_compra=?, depreciacao_mensal=?, valor_venda_final=?, custo_minuto_maquina=? WHERE id=?''', 
+        (request.form['nome_equipamento'], float(request.form['potencia']), float(request.form['consumo_eletrico']), request.form['velocidade'], request.form['avanco'], float(request.form['comprimento_max'] or 0), float(request.form['diametro_max'] or 0), int(request.form['frequencia_manutencao']), int(request.form['horas_trabalhadas'] or 0), float(request.form['preco_compra']), float(request.form['depreciacao_mensal']), float(request.form['valor_venda_final']), float(request.form['custo_minuto_maquina']), id))
+    conn.commit()
+    conn.close()
+    return redirect(url_for('maquinas'))
+
 @app.route('/requisicoes')
 def requisicoes():
     conn = get_db_connection()
@@ -187,6 +163,7 @@ def salvar_requisicao():
     conn.commit()
     conn.close()
     return redirect(url_for('requisicoes'))
+
 @app.route('/cotar_internet/<int:id>', methods=['POST'])
 def cotar_internet(id):
     conn = get_db_connection()
@@ -218,9 +195,7 @@ def efetivar_compra(id):
         preco = float(request.form['preco_final'])
         pot = float(request.form['potencia_final'])
         dep = float(request.form['depreciacao_final'])
-        custo_depreciacao_minuto = dep / minutos_operacionais
-        custo_energia_minuto = (pot * 0.75) / 60
-        c_mm = custo_depreciacao_minuto + custo_energia_minuto + custo_aluguel_minuto
+        c_mm = (dep / minutos_operacionais) + ((pot * 0.75) / 60) + custo_aluguel_minuto
         conn.execute('INSERT INTO maquinas (nome_equipamento, potencia, consumo_eletrico, velocidade, avanco, comprimento_max, diametro_max, frequencia_manutencao, horas_trabalhadas, preco_compra, depreciacao_mensal, valor_venda_final, custo_minuto_maquina) VALUES (?, ?, ?, "3000", "15000", 500, 300, 1000, 0, ?, ?, ?, ?)', (f"{req['equipamento_tipo']} - {req['especificacao_desejada']}", pot, pot * 0.7, preco, dep, preco * 0.2, c_mm))
         conn.execute("UPDATE requisicoes_compras SET status = 'Comprado e Ativado' WHERE id = ?", (id,))
         conn.commit()
@@ -234,7 +209,6 @@ def deletar_requisicao(id):
     conn.commit()
     conn.close()
     return redirect(url_for('requisicoes'))
-
 # --- ROTAS DA PÁGINA 4: MATERIAIS ---
 @app.route('/materiais')
 def materiais():
@@ -242,31 +216,22 @@ def materiais():
     mats = conn.execute('SELECT * FROM materiais').fetchall()
     conn.close()
     return render_template('materiais.html', materiais=mats)
+
 @app.route('/salvar_material', methods=['POST'])
 def salvar_material():
-    codigo = request.form['codigo_material']
-    nome = request.form['nome_material']
-    preco = float(request.form['preco_unidade'])
-    dimensoes = request.form['dimensoes']
-    volume = float(request.form['volume_disponivel'])
     try:
         conn = get_db_connection()
-        conn.execute('INSERT INTO materiais (codigo_material, nome_material, preco_unidade, dimensoes, volume_disponivel) VALUES (?, ?, ?, ?, ?)', (codigo, nome, preco, dimensoes, volume))
+        conn.execute('INSERT INTO materiais (codigo_material, nome_material, preco_unidade, dimensoes, volume_disponivel) VALUES (?, ?, ?, ?, ?)', (request.form['codigo_material'], request.form['nome_material'], float(request.form['preco_unidade']), request.form['dimensoes'], float(request.form['volume_disponivel'])))
         conn.commit()
         conn.close()
-    except sqlite3.IntegrityError:
-        return "Erro Pedagógico: Código de material duplicado!"
+    except sqlite3.IntegrityError: 
+        return "Erro Pedagógico: Material duplicado!"
     return redirect(url_for('materiais'))
 
 @app.route('/alterar_material/<int:id>', methods=['POST'])
 def alterar_material(id):
-    codigo = request.form['codigo_material']
-    nome = request.form['nome_material']
-    preco = float(request.form['preco_unidade'])
-    dimensoes = request.form['dimensoes']
-    volume = float(request.form['volume_disponivel'])
     conn = get_db_connection()
-    conn.execute('UPDATE materiais SET codigo_material=?, nome_material=?, preco_unidade=?, dimensoes=?, volume_disponivel=? WHERE id=?', (codigo, nome, preco, dimensoes, volume, id))
+    conn.execute('UPDATE materiais SET codigo_material=?, nome_material=?, preco_unidade=?, dimensoes=?, volume_disponivel=? WHERE id=?', (request.form['codigo_material'], request.form['nome_material'], float(request.form['preco_unidade']), request.form['dimensoes'], float(request.form['volume_disponivel']), id))
     conn.commit()
     conn.close()
     return redirect(url_for('materiais'))
@@ -278,7 +243,6 @@ def deletar_material(id):
     conn.commit()
     conn.close()
     return redirect(url_for('materiais'))
-
 # --- ROTAS DA PÁGINA 5: ENGENHARIA DE PRODUTO ---
 @app.route('/engenharia')
 def engenharia():
@@ -297,7 +261,7 @@ def salvar_produto():
         conn.execute('INSERT INTO produtos (codigo_produto, nome_produto) VALUES (?, ?)', (request.form['codigo_produto'], request.form['nome_produto']))
         conn.commit()
         conn.close()
-    except sqlite3.IntegrityError:
+    except sqlite3.IntegrityError: 
         return "Erro: Produto duplicado."
     return redirect(url_for('engenharia'))
 
@@ -355,9 +319,9 @@ def abastecer_estoque():
     qtd = float(request.form['quantidade_abastecer'])
     conn = get_db_connection()
     est = conn.execute('SELECT * FROM estoque_produtos WHERE produto_id = ?', (prod_id,)).fetchone()
-    if not est:
+    if not est: 
         conn.execute('INSERT INTO estoque_produtos (produto_id, quantidade_disponivel) VALUES (?, ?)', (prod_id, qtd))
-    else:
+    else: 
         conn.execute('UPDATE estoque_produtos SET quantidade_disponivel = quantidade_disponivel + ? WHERE produto_id = ?', (qtd, prod_id))
     conn.commit()
     conn.close()
@@ -426,22 +390,11 @@ def dar_baixa_op(id):
 @app.route('/roi')
 def roi():
     conn = get_db_connection()
-    v_dados = conn.execute('''
-        SELECT 
-            COALESCE(SUM((fp.preco_venda_final * pv.quantidade) * (1 - pv.desconto_percentual/100)), 0) AS receita_bruta, 
-            COALESCE(SUM(pv.quantidade), 0) AS total_pecas 
-        FROM pedidos_vendas pv 
-        JOIN formacao_precos fp ON pv.produto_id = fp.produto_id
-    ''').fetchone()
+    v_dados = conn.execute('SELECT COALESCE(SUM((fp.preco_venda_final * pv.quantidade) * (1 - pv.desconto_percentual/100)), 0) AS receita_bruta, COALESCE(SUM(pv.quantidade), 0) AS total_pecas FROM pedidos_vendas pv JOIN formacao_precos fp ON pv.produto_id = fp.produto_id').fetchone()
     invs = conn.execute('SELECT COALESCE(SUM(valor_imovel_estimado), 0) AS cap_imobilizado FROM investimentos_imobiliarios').fetchone()
     conn.close()
-    rec = v_dados['receita_bruta']
-    pecas = v_dados['total_pecas']
-    cap = invs['cap_imobilizado']
-    if cap > 0:
-        roi_calculado = (rec / cap) * 100
-    else:
-        roi_calculado = 0.0
+    rec, pecas, cap = v_dados['receita_bruta'], v_dados['total_pecas'], invs['cap_imobilizado']
+    roi_calculado = (rec / cap) * 100 if cap > 0 else 0.0
     return render_template('roi.html', receita=rec, total_pecas=pecas, capital=cap, roi=roi_calculado)
 
 if __name__ == '__main__':
