@@ -10,7 +10,25 @@
         .row { display: flex; justify-content: space-between; margin-bottom: 8px; }
         .footer-obs { margin-top: 20px; border-top: 2px dashed #000; padding-top: 10px; font-style: italic; }
         .btn-print { background: #000; color: #fff; padding: 10px; border: none; font-weight: bold; cursor: pointer; display: block; margin: 10px auto; }
-        @media print { .btn-print { display: none; } }
+        
+        /* Regras exclusivas para organizar a impressão */
+        @media print { 
+            .btn-print, 
+            .barra-acessibilidade, 
+            .cabecalho-corporativo, 
+            #menuNavegacao { 
+                display: none !important; 
+            } 
+            body { 
+                margin: 0; 
+                padding: 0; 
+            }
+            .nf-box { 
+                border: 2px solid #000;
+                max-width: 100%;
+                page-break-inside: avoid;
+            }
+        }
     </style>
 </head>
 <body>
@@ -72,11 +90,7 @@
         </ul>
     </nav>
 </header>
-
-
-
-    
-    <button class="btn-print" onclick="window.print()">🖨️ Emitir via Impressora</button>
+<button class="btn-print" onclick="window.print()">🖨️ Emitir via Impressora</button>
 
     <div class="nf-box">
         <div class="header">
@@ -121,18 +135,16 @@
 
         <div class="footer-obs">
             <p><strong>OBSERVAÇÕES DO FISCO FILOSÓFICO:</strong> {{ p.observacoes }}</p>
-            <p>*Nota emitida para fins estritamente pedagógicos e simulações de engenharia econômica em sala de aula.</p>
+            <p>*Nota emitida para fins estritamente pedagogicos e simulações de engenharia econômica em sala de aula.</p>
         </div>
     </div>
 
     <script>
-    // Função para abrir e fechar o menu hambúrguer no celular
     function alternarMenuMobile() {
         const menu = document.getElementById('menuNavegacao');
         menu.classList.toggle('ativo');
     }
 
-    // Controle do tamanho das fontes para as Big TVs ou baixa visão
     let tamanhoAtual = 100;
     function mudarFonte(direcao) {
         tamanhoAtual += (direcao * 10);
@@ -141,7 +153,6 @@
         }
     }
 
-    // Controle do modo de alto contraste
     function alternarAltoContraste() {
         const corpo = document.body;
         if (corpo.style.filter === "invert(1) contrast(1.2)") {
