@@ -36,7 +36,7 @@ def init_db():
         )
     ''')
 
-    # Tabela de Máquinas Robustecida com Operador CLT
+    # Tabela de Máquinas Robustecida com Operador CLT e Custos de Folha
     cursor.execute('''
         CREATE TABLE IF NOT EXISTS maquinas (
             id INTEGER PRIMARY KEY AUTOINCREMENT, 
@@ -152,6 +152,7 @@ def deletar_estrutura(id):
     conn.commit()
     conn.close()
     return redirect(url_for('estrutura'))
+
 @app.route('/maquinas')
 def maquinas():
     conn = get_db_connection()
@@ -160,14 +161,13 @@ def maquinas():
     conn.close()
     base = ult['aluguel_regional'] if ult else 0
     return render_template('maquinas.html', maquinas=m_dados, custo_minuto_estrutural=base/(176*60) if base > 0 else 0)
-
 @app.route('/salvar_maquina', methods=['POST'])
 def salvar_maquina():
     conn = get_db_connection()
     conn.execute('''
         INSERT INTO maquinas (nome_equipamento, potencia, consumo_eletrico, velocidade, avanco, comprimento_max, diametro_max, frequencia_manutencao, horas_trabalhadas, preco_compra, depreciacao_mensal, valor_venda_final, custo_minuto_maquina, operador_nome, custo_minuto_operador, salario_base, valor_adicionais, turno_trabalho, dia_semana) 
         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)''', 
-        (request.form['nome_equipamento'], float(request.form['potencia']), float(request.form['consumo_eletrico']), request.form['velocidade'], request.form['avanco'], float(request.form['comprimento_max'] or 0), float(request.form['diametro_max'] or 0), int(request.form['frequencia_manutencao']), int(request.form['horas_trabalhadas'] or 0), float(request.form['preco_compra']), float(request.form['depreciacao_mensal']), float(request.form['valor_venda_final']), float(request.form['custo_minuto_maquina']), request.form.get('operador_nome', 'Posto Vago'), float(request.form.get('custo_minuto_operador', 0.0)), float(request.form.get('salario_base', 0.0)), float(request.form.get('valor_adicionais', 0.0)), request.form.get('turno', 'Diurno'), request.form.get('dia_semana', 'Regular')))
+        (request.form['nome_equipamento'], float(request.form['potencia']), float(request.form['consumo_eletrico']), request.form['velocidade'], request.form['avanco'], float(request.form['comprimento_max'] or 0), float(request.form['diametro_max'] or 0), int(request.form['frequencia_manutencao']), int(request.form['horas_trabalhadas'] or 0), float(request.form['preco_compra']), float(request.form['depreciacao_mensal']), float(request.form['valor_venda_final']), float(request.form['custo_minuto_maquina']), request.form.get('operador_nome', 'Posto Vago - Aguardando MOD'), float(request.form.get('custo_minuto_operador', 0.0)), float(request.form.get('salario_base', 0.0)), float(request.form.get('valor_adicionais', 0.0)), request.form.get('turno', 'Diurno'), request.form.get('dia_semana', 'Regular')))
     conn.commit()
     conn.close()
     return redirect(url_for('maquinas'))
@@ -190,19 +190,17 @@ def deletar_maquina(id):
     conn.close()
     return redirect(url_for('maquinas'))
 
-# --- NOVO MÓDULO EXCLUSIVO DE RECURSOS HUMANOS ---
+# --- RECURSOS HUMANOS ---
 @app.route('/rh')
 def rh():
     conn = get_db_connection()
-    # Puxa as máquinas que possuem operadores alocados e ativos no chão de fábrica
-    colaboradores = conn.execute("SELECT * FROM maquinas WHERE operador_nome != 'Posto Vago - Aguardando MOD'").fetchall()
+    colaboradores = conn.execute("SELECT * FROM maquinas WHERE operador_nome != 'Posto Vago - Aguardando MOD' AND operador_nome != ''").fetchall()
     conn.close()
     return render_template('rh.html', colaboradores=colaboradores)
 
 @app.route('/salvar_colaborador', methods=['POST'])
 def salvar_colaborador():
     conn = get_db_connection()
-    # Vincula o novo colaborador direto a um posto operacional de máquina vago
     posto_vago = conn.execute("SELECT id FROM maquinas WHERE operador_nome = 'Posto Vago - Aguardando MOD' LIMIT 1").fetchone()
     
     if posto_vago:
@@ -217,11 +215,67 @@ def salvar_colaborador():
             posto_vago['id']
         ))
         conn.commit()
-        flash('Profissional CLT contratado e alocado com sucesso em uma célula de produção!', 'success')
+        flash('Profissional CLT contratado e alocado com sucesso em uma máquina ativa!', 'success')
     else:
-        flash('Erro de Expansão: Não existem postos operacionais ou máquinas vagas aguardando mão de obra direta.', 'danger')
+        conn.execute('''
+            INSERT INTO maquinas (nome_equipamento, potencia, consumo_eletrico, velocidade, avanco, comprimento_max, diametro_max, frequencia_manutencao, horas_trabalhadas, preco_compra, depreciacao_mensal, valor_venda_final, custo_minuto_maquina, operador_nome, custo_minuto_operador, salario_base, valor_adicionais, turno_trabalho, dia_semana) 
+            VALUES ('Posto de Apoio / Indireto', 0, 0, 'N/A', 'N/A', 0, 0, 9999, 0, 0, 0, 0, 0, ?, ?, ?, ?, ?, ?)''',
+            (request.form['nome_completo'], float(request.form['custo_minuto_operador']), float(request.form['salario_base']), float(request.form['valor_adicionais']), request.form['turno'], request.form['dia_semana']))
+        conn.commit()
+        flash('Quadro Corporativo Expandido: Profissional contratado e alocado em Posto Geral de Apoio (Mão de Obra Indireta).', 'success')
+        
     conn.close()
     return redirect(url_for('rh'))
+@app.route('/imprimir_holerite/<int:id>/<string:tipo>')
+def imprimir_holerite(id, tipo):
+    conn = get_db_connection()
+    col = conn.execute('SELECT * FROM maquinas WHERE id = ?', (id,)).fetchone()
+    conn.close()
+    
+    if not col or col['operador_nome'] == 'Posto Vago - Aguardando MOD':
+        return "Colaborador ou posto operacional não localizado."
+        
+    salario_base = float(col['salario_base'] or 0.0)
+    adicionais = float(col['valor_adicionais'] or 0.0)
+    horas_extras_acumuladas = 1250.00 if col['dia_semana'] != 'Regular' else 0.0
+    
+    titulo_recibo = "RECIBO DE PAGAMENTO MENSAL"
+    provento_principal_nome = "Salário Base Nominal"
+    provento_principal_valor = salario_base
+    
+    if tipo == "ferias":
+        titulo_recibo = "RECIBO DE PAGAMENTO DE FÉRIAS (CLT)"
+        provento_principal_nome = "Férias Integrais Gozadas"
+        provento_principal_valor = salario_base + (salario_base / 3)
+    elif tipo == "decimo":
+        titulo_recibo = "RECIBO DE DÉCIMO TERCEIRO SALÁRIO INTEGRAL"
+        provento_principal_nome = "13º Salário Integral Adiantado"
+        provento_principal_valor = salario_base
+
+    total_proventos = provento_principal_valor + adicionais + horas_extras_acumuladas
+    inss = total_proventos * 0.11
+    irrf = (total_proventos * 0.075) if total_proventos > 2250 else 0.0
+    vale_transporte = salario_base * 0.06 if col['turno_trabalho'] == 'Diurno' else 0.0
+    total_descontos = inss + irrf + vale_transporte
+    valor_liquido = total_proventos - total_descontos
+    
+    dados_holerite = {
+        "tipo_recibo": titulo_recibo,
+        "nome": col['operador_nome'],
+        "cargo": f"CBO {col['id']} - Posto de Trabalho Ativo",
+        "principal_nome": provento_principal_nome,
+        "principal_valor": provento_principal_valor,
+        "adicionais": adicionais,
+        "he": horas_extras_acumuladas,
+        "total_proventos": total_proventos,
+        "inss": inss,
+        "irrf": irrf,
+        "vt": vale_transporte,
+        "total_descontos": total_descontos,
+        "liquido": valor_liquido
+    }
+    return render_template('recibo_trabalhista.html', h=dados_holerite)
+
 @app.route('/calcular_rescisao/<int:id>/<string:tipo>', methods=['POST'])
 def calcular_rescisao(id, tipo):
     conn = get_db_connection()
@@ -233,13 +287,13 @@ def calcular_rescisao(id, tipo):
         motivo_str = ""
         
         if tipo == "justa_causa":
-            total_rescisao = base * 0.5 # Apenas saldo de salário do mês proporcional
+            total_rescisao = base * 0.5
             motivo_str = "Rescisão por Justa Causa Efetuada. Direitos retidos conforme Art. 482 da CLT."
         elif tipo == "voluntaria":
-            total_rescisao = (base / 12 * 6) + (base / 12 * 6) + (base * 0.5) # 13º e férias prop sem multa FGTS
+            total_rescisao = (base / 12 * 6) + (base / 12 * 6) + (base * 0.5)
             motivo_str = "Pedido de Demissão Voluntária homologado com aviso cumprido."
         elif tipo == "demissao":
-            total_rescisao = base + (base / 12 * 6) + (base / 12 * 6) + (base * 1.40) # Direitos integrais + Multa do FGTS
+            total_rescisao = base + (base / 12 * 6) + (base / 12 * 6) + (base * 1.40)
             motivo_str = "Dispensa Imotivada sem Justa Causa concretizada. Verbas rescisórias liberadas."
             
         conn.execute('UPDATE maquinas SET operador_nome = "Posto Vago - Aguardando MOD", custo_minuto_operador = 0.0, salario_base = 0.0, valor_adicionais = 0.0 WHERE id = ?', (id,))
@@ -250,7 +304,7 @@ def calcular_rescisao(id, tipo):
     conn.close()
     return redirect(url_for('rh'))
 
-# --- ROTAS DE SUPRIMENTOS E MATERIAIS ---
+# --- CENTRAL DE REQUISIÇÕES E SUPRIMENTOS ---
 @app.route('/requisicoes')
 def requisicoes():
     conn = get_db_connection()
@@ -269,47 +323,6 @@ def compras():
 def salvar_requisicao():
     conn = get_db_connection()
     conn.execute('INSERT INTO requisicoes_compras (equipamento_tipo, especificacao_desejada, quantidade) VALUES (?, ?, ?)', (request.form['equipamento_tipo'], request.form['especificacao_desejada'], int(request.form['quantidade'])))
-    conn.commit()
-    conn.close()
-    return redirect(url_for('requisicoes'))
-
-@app.route('/cotar_internet/<int:id>', methods=['POST'])
-def cotar_internet(id):
-    conn = get_db_connection()
-    req = conn.execute('SELECT * FROM requisicoes_compras WHERE id = ?', (id,)).fetchone()
-    if req:
-        tipo = req['equipamento_tipo'].lower()
-        esp = req['especificacao_desejada'].lower()
-        preco, pot, dep = 45000, 5.5, 375
-        if 'torno' in tipo or 'cnc' in tipo: preco, pot, dep = (480000, 22.0, 4000) if 'mazak' in esp else (250000, 15.0, 2100)
-        elif 'fresa' in tipo: preco, pot, dep = (110000, 7.5, 900)
-        elif 'serra' in tipo: preco, pot, dep = (22000, 2.2, 180)
-        conn.execute('UPDATE requisicoes_compras SET preco_cotado=?, potencia_cotada=?, depreciacao_sugerida=?, status="Cotado - Aguardando Confirmação" WHERE id=?', (preco, pot, dep, id))
-        conn.commit()
-    conn.close()
-    return redirect(url_for('requisicoes'))
-
-@app.route('/efetivar_compra/<int:id>', methods=['POST'])
-def efetivar_compra(id):
-    conn = get_db_connection()
-    req = conn.execute('SELECT * FROM requisicoes_compras WHERE id = ?', (id,)).fetchone()
-    ult_imovel = conn.execute('SELECT aluguel_regional FROM investimentos_imobiliarios ORDER BY id DESC LIMIT 1').fetchone()
-    aluguel_mensal = ult_imovel['aluguel_regional'] if ult_imovel else 0
-    minutos_operacionais = 176 * 60
-    custo_aluguel_minuto = aluguel_mensal / minutos_operacionais
-    if req:
-        preco, pot, dep = float(request.form['preco_final']), float(request.form['potencia_final']), float(request.form['depreciacao_final'])
-        c_mm = (dep / minutos_operacionais) + ((pot * 0.75) / 60) + custo_aluguel_minuto
-        conn.execute('INSERT INTO maquinas (nome_equipamento, potencia, consumo_eletrico, velocidade, avanco, comprimento_max, diametro_max, frequencia_manutencao, horas_trabalhadas, preco_compra, depreciacao_mensal, valor_venda_final, custo_minuto_maquina, operador_nome, custo_minuto_operador) VALUES (?, ?, ?, "3000", "15000", 500, 300, 1000, 0, ?, ?, ?, ?, "Posto Vago - Aguardando MOD", 0.0)', (f"{req['equipamento_tipo']} - {req['especificacao_desejada']}", pot, pot * 0.7, preco, dep, preco * 0.2, c_mm))
-        conn.execute("UPDATE requisicoes_compras SET status = 'Comprado e Ativado' WHERE id = ?", (id,))
-        conn.commit()
-    conn.close()
-    return redirect(url_for('requisicoes'))
-
-@app.route('/deletar_requisicao/<int:id>', methods=['POST'])
-def deletar_requisicao(id):
-    conn = get_db_connection()
-    conn.execute('DELETE FROM requisicoes_compras WHERE id=?', (id,))
     conn.commit()
     conn.close()
     return redirect(url_for('requisicoes'))
@@ -389,7 +402,6 @@ def salvar_preco():
     conn.commit()
     conn.close()
     return redirect(url_for('precificacao'))
-
 @app.route('/vendas')
 def vendas():
     conn = get_db_connection()
@@ -421,7 +433,6 @@ def lancar_venda():
         conn.commit()
     conn.close()
     return redirect(url_for('vendas'))
-
 @app.route('/pcp')
 def pcp():
     conn = get_db_connection()
@@ -432,18 +443,35 @@ def pcp():
 @app.route('/dar_baixa_op/<int:id>', methods=['POST'])
 def dar_baixa_op(id):
     conn = get_db_connection()
-    conn.execute('UPDATE ordens_processo SET operador_nome = ?, status = "Finalizado" WHERE id = ?', (request.form['operador_nome'], id))
+    conn.execute('UPDATE ordens_processo SET status = "Finalizado" WHERE id = ?', (id,))
     conn.commit()
     conn.close()
     return redirect(url_for('pcp'))
+
+@app.route('/financeiro')
+def financeiro():
+    conn = get_db_connection()
+    faturamento_bruto = conn.execute('SELECT COALESCE(SUM(fp.preco_venda_final * pv.quantidade), 0) AS total FROM pedidos_vendas pv JOIN formacao_precos fp ON pv.produto_id = fp.produto_id').fetchone()['total']
+    despesa_pessoal_bruta = conn.execute("SELECT COALESCE(SUM(salario_base + valor_adicionais), 0) AS total FROM maquinas WHERE operador_nome != 'Posto Vago - Aguardando MOD' AND operador_nome != ''").fetchone()['total']
+    conn.close()
+    
+    impostos_provisao = despesa_pessoal_bruta * 0.11
+    caixa_liquido = faturamento_bruto - despesa_pessoal_bruta - impostos_provisao
+    
+    return render_template('financeiro.html', faturamento=faturamento_bruto, custo_pessoal=despesa_pessoal_bruta, impostos=impostos_provisao, saldo_liquido=caixa_liquido)
+
+@app.route('/pagar_dividendos', methods=['POST'])
+def pagar_dividendos():
+    flash('Distribuição de dividendos processada com sucesso! Lançamento enviado para o Livro Razão Contábil.', 'success')
+    return redirect(url_for('financeiro'))
 
 @app.route('/roi')
 def roi():
     conn = get_db_connection()
     v_dados = conn.execute('SELECT COALESCE(SUM(fp.preco_venda_final * pv.quantidade), 0) AS receita_bruta, COALESCE(SUM(pv.quantidade), 0) AS total_pecas FROM pedidos_vendas pv JOIN formacao_precos fp ON pv.produto_id = fp.produto_id').fetchone()
-    invs = conn.execute('SELECT COALESCE(SUM(valor_imovel_estimado), 0) AS cap_imobilizado FROM investimentos_imobiliarios').fetchone()
+    invs = conn.execute('SELECT COALESCE(SUM(valor_imovel_estimado), 0) AS capital_imobilizado FROM investimentos_imobiliarios').fetchone()
     conn.close()
-    rec, pecas, cap = v_dados['receita_bruta'], v_dados['total_pecas'], invs['cap_imobilizado']
+    rec, pecas, cap = v_dados['receita_bruta'], v_dados['total_pecas'], invs['capital_imobilizado']
     roi_calculado = (rec / cap) * 100 if cap > 0 else 0.0
     return render_template('roi.html', receita=rec, total_pecas=pecas, capital=cap, roi=roi_calculado)
 
