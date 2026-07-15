@@ -2,137 +2,180 @@
 <html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
-    <title>Gestão de Estoque Acabados</title>
+    <title>Inventário de Acabados e Controle de Estoque</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 </head>
 <body>
-    <!-- Barra de Acessibilidade Superior -->
-    <div class="barra-acessibilidade">
-        <button class="btn-acessibilidade" onclick="alternarAltoContraste()">Acessibilidade 🌓 Alto Contraste</button>
-        <button class="btn-acessibilidade" onclick="mudarFonte(1)">A+</button>
-        <button class="btn-acessibilidade" onclick="mudarFonte(-1)">A-</button>
-    </div>
 
-    <!-- Cabeçalho Principal Terceiro ADM Associados -->
-    <header class="cabecalho-corporativo">
-        <div class="identidade-container">
-            <div class="branding-flex">
-                <img src="{{ url_for('static', filename='logo.png') }}" alt="Logo TERADMAS" style="height: 65px; width: auto; object-fit: contain; border-radius: 4px;">
-                <div class="texto-empresa">
-                    <h1>TERCEIRO ADM ASSOCIADOS</h1>
-                    <p>Projetos, Execução, Assessoria, Auditoria e Gerenciamento Operacional e de Custos</p>
-                </div>
+<!-- Barra de Acessibilidade Superior -->
+<div class="barra-acessibilidade">
+    <button class="btn-acessibilidade" onclick="alternarAltoContraste()">Acessibilidade 🌓 Alto Contraste</button>
+    <button class="btn-acessibilidade" onclick="mudarFonte(1)">A+</button>
+    <button class="btn-acessibilidade" onclick="mudarFonte(-1)">A-</button>
+</div>
+
+<!-- Cabeçalho Principal Terceiro ADM Associados -->
+<header class="cabecalho-corporativo">
+    <div class="identidade-container">
+        <div class="branding-flex">
+            <img src="{{ url_for('static', filename='logo.png') }}" alt="Logo TERADMAS" style="height: 65px; width: auto; object-fit: contain; border-radius: 4px;">
+            <div class="texto-empresa">
+                <h1>TERCEIRO ADM ASSOCIADOS</h1>
+                <p>Projetos, Execução, Assessoria, Auditoria e Gerenciamento Operacional e de Custos</p>
             </div>
-            <button class="menu-hamburguer" onclick="alternarMenuMobile()">☰</button>
         </div>
-
-        <!-- Navegação Responsiva com Menus Dropdown -->
-        <nav class="nav-container" id="menuNavegacao">
-            <ul class="menu-cascata">
-                <li class="item-menu">
-                    <a href="#" class="link-principal">🏢 Módulos Iniciais ▾</a>
-                    <ul class="sub-menu">
-                        <li><a href="/estrutura">1. Investimentos Imobiliários</a></li>
-                        <li><a href="/maquinas">2. Engenharia de Ativos (Máquinas)</a></li>
-                        <li><a href="/materiais">3. Almoxarifado (Materiais)</a></li>
-                    </ul>
-                </li>
-                <li class="item-menu">
-                    <a href="#" class="link-principal">🛠️ Custos & Engenharia ▾</a>
-                    <ul class="sub-menu">
-                        <li><a href="/engenharia">4. Engenharia de Produto (BOM)</a></li>
-                        <li><a href="/precificacao">5. Controladoria e Precificação</a></li>
-                    </ul>
-                </li>
-                <li class="item-menu">
-                    <a href="#" class="link-principal">💰 Operações Comerciais ▾</a>
-                    <ul class="sub-menu">
-                        <li><a href="/vendas">6. Painel de Vendas Comerciais</a></li>
-                        <li><a href="/estoque">7. Inventário de Acabados</a></li>
-                    </ul>
-                </li>
-                <li class="item-menu">
-                    <a href="#" class="link-principal">🏭 Chão de Fábrica & ROI ▾</a>
-                    <ul class="sub-menu">
-                        <li><a href="/pcp">8. Planilha de Processos (PCP)</a></li>
-                        <li><a href="/roi">9. Indicadores de Retorno (ROI)</a></li>
-                    </ul>
-                </li>
-            </ul>
-        </nav>
-    </header>
-
-    <div class="container">
-        <h2>Página 8: Logística - Inventário de Produtos Acabados</h2>
-        
-        <!-- Formulário Pedagógico de Carga Inicial de Estoque -->
-        <div style="background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); margin-bottom: 25px;">
-            <h3 style="margin-top: 0;">📥 Entrada de Estoque / Compra de Lote Comercial</h3>
-            <form action="/abastecer_estoque" method="POST" style="display: grid; grid-template-columns: 2fr 1fr auto; gap: 15px; align-items: flex-end;">
-                <div class="form-group" style="margin-bottom: 0;">
-                    <label>Selecionar Produto Base para Abastecer:</label>
-                    <select name="produto_id" required style="padding: 10px; border-radius: 4px;">
-                        <option value="">-- Escolha o Produto --</option>
-                        {% for item in estoque_itens %}
-                        <option value="{{ item.produto_id }}">{{ item.codigo_produto }} - {{ item.nome_produto }}</option>
-                        {% endfor %}
-                    </select>
-                </div>
-                <div class="form-group" style="margin-bottom: 0;">
-                    <label>Quantidade de Entrada:</label>
-                    <input type="number" name="quantidade_abastecer" required min="1" value="100">
-                </div>
-                <button type="submit" class="btn btn-success" style="height: 40px;">⚡ Injetar Saldo no Almoxarifado</button>
-            </form>
-        </div>
-        <!-- Tabela de Listagem de Saldos -->
-        <h3>Saldos Físicos Atuais</h3>
-        <table class="data-table">
-            <thead>
-                <tr>
-                    <th>Código de Fábrica</th>
-                    <th>Nome do Produto Acabado</th>
-                    <th>Saldo Físico Disponível</th>
-                    <th>Status de Suprimentos</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for item in estoque_itens %}
-                <tr>
-                    <td><code>{{ item.codigo_produto }}</code></td>
-                    <td><strong>{{ item.nome_produto }}</strong></td>
-                    <td><strong style="color: var(--primary-color); font-size: 16px;">{{ item.quantidade_disponivel }} un</strong></td>
-                    <td>
-                        {% if item.quantidade_disponivel <= 5 %}
-                            <span style="background:#fce4d6; color:#c65911; padding:4px 8px; border-radius:4px; font-weight:bold;">⚠️ ESTOQUE CRÍTICO</span>
-                        {% else %}
-                            <span style="background:#e2efda; color:#375623; padding:4px 8px; border-radius:4px; font-weight:bold;">🟢 Nível Seguro</span>
-                        {% endif %}
-                    </td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
+        <button class="menu-hamburguer" onclick="alternarMenuMobile()">☰</button>
     </div>
 
-    <!-- SCRIPTS DE INTELIGÊNCIA VISUAL E MOBILE -->
-    <script>
-        function alternarMenuMobile() {
-            const menu = document.getElementById('menuNavegacao');
-            menu.classList.toggle('ativo');
-        }
+    <!-- Navegação Responsiva com Menus Dropdown -->
+    <nav class="nav-container" id="menuNavegacao">
+        <ul class="menu-cascata">
+            <li class="item-menu">
+                <a href="#" class="link-principal">🏢 Módulos Iniciais ▾</a>
+                <ul class="sub-menu">
+                    <li><a href="/estrutura">1. Investimentos Imobiliários</a></li>
+                    <li><a href="/maquinas">2. Engenharia de Ativos (Máquinas)</a></li>
+                    <li><a href="/requisicoes">📋 3. Central de Requisições</a></li>
+                    <li><a href="/compras">💰 4. Cockpit de Suprimentos</a></li>
+                    <li><a href="/materiais">5. Almoxarifado (Materiais)</a></li>
+                </ul>
+            </li>
+            <li class="item-menu">
+                <a href="#" class="link-principal">🛠️ Custos & Engenharia ▾</a>
+                <ul class="sub-menu">
+                    <li><a href="/engenharia">6. Engenharia de Produto (BOM)</a></li>
+                    <li><a href="/precificacao">7. Controladoria e Precificação</a></li>
+                </ul>
+            </li>
+            <li class="item-menu">
+                <a href="#" class="link-principal">💰 Operações Comerciais ▾</a>
+                <ul class="sub-menu">
+                    <li><a href="/vendas">8. Painel de Vendas Comerciais</a></li>
+                    <li><a href="/estoque">9. Inventário de Acabados</a></li>
+                </ul>
+            </li>
+            <li class="item-menu">
+                <a href="#" class="link-principal">🏭 Chão de Fábrica & ROI ▾</a>
+                <ul class="sub-menu">
+                    <li><a href="/pcp">10. Planilha de Processos (PCP)</a></li>
+                    <li><a href="/roi">11. Indicadores de Retorno (ROI)</a></li>
+                </ul>
+            </li>
+        </ul>
+    </nav>
+</header>
+<div class="container">
+    <h2>Página 9: Almoxarifado Central - Inventário de Produtos Acabados</h2>
+    <p>O recebimento de novos lotes depende obrigatoriamente da finalização das ordens no chão de fábrica (PCP).</p>
 
-        let tamanhoAtual = 100;
-        function mudarFonte(direcao) {
-            tamanhoAtual += (direcao * 10);
-            if(tamanhoAtual >= 70 && tamanhoAtual <= 160) {
-                document.body.style.fontSize = tamanhoAtual + "%";
-            }
-        }
+    <!-- Bloco de Alertas de Validação do ERP -->
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+        {% for category, message in messages %}
+          <div class="alert alert-{{ category }}" style="padding: 12px; margin-bottom: 20px; border-radius: 4px; background-color: {% if category=='success' %}#d4edda{% elif category=='danger' %}#f8d7da{% else %}#fff3cd{% endif %}; color: {% if category=='success' %}#155724{% elif category=='danger' %}#721c24{% else %}#856404{% endif %}; font-weight: bold; border: 1px solid;">
+            {{ message }}
+          </div>
+        {% endfor %}
+      {% endif %}
+    {% endwith %}
 
-        function alternarAltoContraste() {
-            document.body.classList.toggle('alto-contraste-ativo');
+    <!-- Tabela 1: Saldos Atuais no Inventário -->
+    <h3>📦 Saldo Atual em Almoxarifado</h3>
+    <table class="data-table" style="margin-bottom: 30px;">
+        <thead>
+            <tr>
+                <th>Código do Produto</th>
+                <th>Nome do Item Comercial</th>
+                <th>Quantidade Disponível</th>
+                <th>Status Logístico</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for item in estoque_itens %}
+            <tr>
+                <td><code>{{ item.codigo_produto }}</code></td>
+                <td><strong>{{ item.nome_produto }}</strong></td>
+                <td><span style="font-size: 15px; font-weight: bold; color: #2b5797;">{{ "%.0f"|format(item.quantidade_disponivel) }}</span> un</td>
+                <td>
+                    {% if item.quantidade_disponivel <= 0 %}
+                        <span style="color:#721c24; font-weight:bold; background:#f8d7da; padding:3px 6px; border-radius:3px;">🚨 Estoque Zerado</span>
+                    {% elif item.quantidade_disponivel <= 5 %}
+                        <span style="color:#856404; font-weight:bold; background:#fff3cd; padding:3px 6px; border-radius:3px;">⚠️ Abastecimento Crítico</span>
+                    {% else %}
+                        <span style="color:#155724; font-weight:bold; background:#d4edda; padding:3px 6px; border-radius:3px;">✅ Nível Seguro</span>
+                    {% endif %}
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    <!-- Tabela 2: Demandas Comerciais Amarradas à Produção -->
+    <h3>📋 Demandas de Vendas Aguardando Abastecimento / PCP</h3>
+    <table class="data-table">
+        <thead>
+            <tr>
+                <th>ID Pedido</th>
+                <th>Produto Requisitado</th>
+                <th>Quantidade Solicitada</th>
+                <th>Rastreabilidade / Engenharia</th>
+                <th>Controle de Entrada de Almoxarifado</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for ped in pedidos %}
+            <tr>
+                <td><code>OS-00{{ ped.id }}</code></td>
+                <td><strong>{{ ped.nome_produto }}</strong></td>
+                <td>{{ ped.quantidade }} unidades</td>
+                <td>
+                    <!-- Gatilho para abrir a árvore de processos no PCP -->
+                    <form action="/solicitar_producao_pcp/{{ ped.id }}" method="POST" style="display:inline;">
+                        <button type="submit" class="btn btn-primary" style="font-size: 12px; padding: 5px 10px;">🏭 Emitir Ordem ao PCP</button>
+                    </form>
+                </td>
+                <td>
+                    <!-- Tenta receber o lote do PCP. O back-end bloqueia se houver OPs pendentes -->
+                    <form action="/abastecer_estoque_pcp" method="POST" style="display:inline; display: flex; gap: 5px; align-items: center;">
+                        <input type="hidden" name="produto_id" value="{{ ped.produto_id }}">
+                        <input type="hidden" name="pedido_id" value="{{ ped.id }}">
+                        <input type="hidden" name="quantidade_abastecer" value="{{ ped.quantidade }}">
+                        <button type="submit" class="btn btn-success" style="font-size: 12px; padding: 5px 10px;">📥 Receber Lote Concluído</button>
+                    </form>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+<script>
+    // Função para abrir e fechar o menu hambúrguer no celular
+    function alternarMenuMobile() {
+        const menu = document.getElementById('menuNavegacao');
+        menu.classList.toggle('ativo');
+    }
+
+    // Controle do tamanho das fontes para as Big TVs ou baixa visão
+    let tamanhoAtual = 100;
+    function mudarFonte(direcao) {
+        tamanhoAtual += (direcao * 10);
+        if(tamanhoAtual >= 70 && tamanhoAtual <= 160) {
+            document.body.style.fontSize = tamanhoAtual + "%";
         }
-    </script>
+    }
+
+    // Controle do modo de alto contraste
+    function alternarAltoContraste() {
+        const corpo = document.body;
+        if (corpo.style.filter === "invert(1) contrast(1.2)") {
+            corpo.style.filter = "none";
+            corpo.style.backgroundColor = "";
+        } else {
+            corpo.style.filter = "invert(1) contrast(1.2)";
+            corpo.style.backgroundColor = "black";
+        }
+    }
+</script>
+
 </body>
 </html>
