@@ -178,7 +178,6 @@ def deletar_requisicao(id):
     conn.commit()
     conn.close()
     return redirect(url_for('requisicoes'))
-
 # --- ROTAS DA PÁGINA 4: MATERIAIS ---
 @app.route('/materiais')
 def materiais():
@@ -223,6 +222,7 @@ def deletar_material(id):
     conn.commit()
     conn.close()
     return redirect(url_for('materiais'))
+
 # --- ROTAS DA PÁGINA 5: ENGENHARIA DE PRODUTO ---
 @app.route('/engenharia')
 def engenharia():
@@ -277,7 +277,6 @@ def salvar_preco():
     conn.commit()
     conn.close()
     return redirect(url_for('precificacao'))
-
 # --- ROTAS DAS PÁGINAS 7 E 8: VENDAS E ESTOQUE BLINDADOS ---
 @app.route('/vendas')
 def vendas():
@@ -307,6 +306,7 @@ def abastecer_estoque():
     conn.commit()
     conn.close()
     return redirect(url_for('estoque'))
+
 @app.route('/lancar_venda', methods=['POST'])
 def lancar_venda():
     prod_id = int(request.form['produto_id'])
@@ -318,7 +318,7 @@ def lancar_venda():
         conn.close()
         return "Erro Pedagógico: Saldo de estoque insuficiente!"
     conn.execute('UPDATE estoque_produtos SET quantidade_disponivel = quantidade_disponivel - ? WHERE produto_id = ?', (qtd, prod_id))
-    conn.execute('INSERT INTO pedidos_vendas (produto_id, quantidade, desconto_percentual, observacoes) VALUES (?, ?, ?, ?)', (prod_id, qtd, float(request.form['desconto_percentual'] or 0), request.form['observacoes']))
+    conn.execute('INSERT INTO pedidos_vendas (produto_id, quantity, discount_percentual, observations) VALUES (?, ?, ?, ?)'.replace('quantity', 'quantidade').replace('discount_percentual', 'desconto_percentual').replace('observations', 'observacoes'), (prod_id, qtd, float(request.form['desconto_percentual'] or 0), request.form['observacoes']))
     conn.commit()
     conn.close()
     return redirect(url_for('vendas'))
@@ -371,15 +371,25 @@ def dar_baixa_op(id):
 @app.route('/roi')
 def roi():
     conn = get_db_connection()
-    v_dados = conn.execute('SELECT SUM((fp.preco_venda_final * pv.quantidade) * (1 - pv.desconto_percentual/100)) AS receita_bruta, SUM(pv.quantidade) AS total_pecas FROM pedidos_vendas pv JOIN formacao_precos fp ON pv.produto_id = fp.produto_id').fetchone()
-    invs = conn.execute('SELECT SUM(valor_terreno + valor_instalacoes) AS cap_imobilizado FROM investimentos_imobiliarios').fetchone()
+    v_dados = conn.execute('''
+        SELECT 
+            COALESCE(SUM((fp.preco_venda_final * pv.quantidade) * (1 - pv.desconto_percentual/100)), 0) AS receita_bruta, 
+            COALESCE(SUM(pv.quantidade), 0) AS total_pecas 
+        FROM pedidos_vendas pv 
+        JOIN formacao_precos fp ON pv.produto_id = fp.produto_id
+    ''').fetchone()
+    invs = conn.execute('SELECT COALESCE(SUM(valor_terreno + valor_instalacoes), 0) AS cap_imobilizado FROM investimentos_imobiliarios').fetchone()
     conn.close()
     
-    rec = v_dados['receita_bruta'] if v_dados and v_dados['receita_bruta'] else 0
-    pecas = v_dados['total_pecas'] if v_dados and v_dados['total_pecas'] else 0
-    cap = invs['cap_imobilizado'] if invs and invs['cap_imobilizado'] else 1
+    rec = v_dados['receita_bruta']
+    pecas = v_dados['total_pecas']
+    cap = invs['cap_imobilizado']
     
-    roi_calculado = (rec / cap) * 100
+    if cap > 0:
+        roi_calculado = (rec / cap) * 100
+    else:
+        roi_calculado = 0.0
+        
     return render_template('roi.html', receita=rec, total_pecas=pecas, capital=cap, roi=roi_calculado)
 
 if __name__ == '__main__':
