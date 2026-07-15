@@ -22,9 +22,20 @@ def init_db():
     # Tabela de Usuários (Anulada no uso, mantida para estrutura)
     cursor.execute('CREATE TABLE IF NOT EXISTS usuarios (id INTEGER PRIMARY KEY AUTOINCREMENT, usuario TEXT UNIQUE NOT NULL, senha TEXT NOT NULL, aprovado INTEGER DEFAULT 0)')
 
-    # Tabela de Investimentos Imobiliários (Página 2)
-    cursor.execute('CREATE TABLE IF NOT EXISTS investimentos_imobiliarios (id INTEGER PRIMARY KEY AUTOINCREMENT, turma_nome TEXT NOT NULL, valor_terreno REAL NOT NULL, valor_instalacoes REAL NOT NULL, taxa_selic REAL NOT NULL, aluguel_regional REAL NOT NULL)')
-
+    # Tabela de Investimentos Imobiliários Modificada (Página 2)
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS investimentos_imobiliarios (
+            id INTEGER PRIMARY KEY AUTOINCREMENT, 
+            turma_nome TEXT NOT NULL, 
+            cidade_regiao TEXT NOT NULL,
+            bairro_imovel TEXT NOT NULL,
+            area_imovel REAL NOT NULL,
+            taxa_selic REAL NOT NULL, 
+            valor_imovel_estimado REAL NOT NULL,
+            aluguel_regional REAL NOT NULL,
+            perc_acionistas REAL NOT NULL
+        )
+    ''')
     # Tabela de Máquinas e Equipamentos (Página 3)
     cursor.execute('CREATE TABLE IF NOT EXISTS maquinas (id INTEGER PRIMARY KEY AUTOINCREMENT, nome_equipamento TEXT NOT NULL, potencia REAL NOT NULL, consumo_eletrico REAL NOT NULL, velocidade TEXT, avanco TEXT, comprimento_max REAL, diametro_max REAL, frequencia_manutencao INTEGER NOT NULL, horas_trabalhadas INTEGER DEFAULT 0, preco_compra REAL NOT NULL, depreciacao_mensal REAL NOT NULL, valor_venda_final REAL NOT NULL, custo_minuto_maquina REAL NOT NULL)')
     
@@ -57,7 +68,6 @@ def init_db():
 
 if not os.path.exists(DATABASE):
     init_db()
-
 # --- ROTAS DE ACESSO DIRETO (SISTEMA DE SEGURANÇA ANULADO) ---
 @app.route('/')
 def index():
@@ -70,7 +80,8 @@ def login():
 @app.route('/cadastrar_usuario', methods=['POST'])
 def cadastrar_usuario():
     return redirect(url_for('estrutura'))
-# --- ROTAS DA PÁGINA 2: INVESTIMENTOS IMOBILIÁRIOS ---
+
+# --- ROTAS DA PÁGINA 2: INVESTIMENTOS IMOBILIÁRIOS MODIFICADAS ---
 @app.route('/estrutura')
 def estrutura():
     conn = get_db_connection()
@@ -81,7 +92,16 @@ def estrutura():
 @app.route('/salvar_estrutura', methods=['POST'])
 def salvar_estrutura():
     conn = get_db_connection()
-    conn.execute('INSERT INTO investimentos_imobiliarios (turma_nome, valor_terreno, valor_instalacoes, taxa_selic, aluguel_regional) VALUES (?, ?, ?, ?, ?)', (request.form['turma_nome'], float(request.form['valor_terreno']), float(request.form['valor_instalacoes']), float(request.form['taxa_selic']), float(request.form['aluguel_regional'])))
+    conn.execute('''
+        INSERT INTO investimentos_imobiliarios 
+        (turma_nome, cidade_regiao, bairro_imovel, area_imovel, taxa_selic, valor_imovel_estimado, aluguel_regional, perc_acionistas) 
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+    ''', (
+        request.form['turma_nome'], request.form['cidade_regiao'], request.form['bairro_imovel'],
+        float(request.form['area_imovel']), float(request.form['taxa_selic']),
+        float(request.form['valor_imovel_estimado']), float(request.form['aluguel_regional']),
+        float(request.form['perc_acionistas'])
+    ))
     conn.commit()
     conn.close()
     return redirect(url_for('estrutura'))
@@ -89,7 +109,16 @@ def salvar_estrutura():
 @app.route('/alterar_estrutura/<int:id>', methods=['POST'])
 def alterar_estrutura(id):
     conn = get_db_connection()
-    conn.execute('UPDATE investimentos_imobiliarios SET turma_nome=?, valor_terreno=?, valor_instalacoes=?, taxa_selic=?, aluguel_regional=? WHERE id=?', (request.form['turma_nome'], float(request.form['valor_terreno']), float(request.form['valor_instalacoes']), float(request.form['taxa_selic']), float(request.form['aluguel_regional']), id))
+    conn.execute('''
+        UPDATE investimentos_imobiliarios 
+        SET turma_nome=?, cidade_regiao=?, bairro_imovel=?, area_imovel=?, taxa_selic=?, valor_imovel_estimado=?, aluguel_regional=?, perc_acionistas=? 
+        WHERE id=?
+    ''', (
+        request.form['turma_nome'], request.form['cidade_regiao'], request.form['bairro_imovel'],
+        float(request.form['area_imovel']), float(request.form['taxa_selic']),
+        float(request.form['valor_imovel_estimado']), float(request.form['aluguel_regional']),
+        float(request.form['perc_acionistas']), id
+    ))
     conn.commit()
     conn.close()
     return redirect(url_for('estrutura'))
@@ -101,7 +130,6 @@ def deletar_estrutura(id):
     conn.commit()
     conn.close()
     return redirect(url_for('estrutura'))
-
 # --- ROTAS DA PÁGINA 3: MAQUINÁRIOS ---
 @app.route('/maquinas')
 def maquinas():
@@ -115,7 +143,12 @@ def maquinas():
 @app.route('/salvar_maquina', methods=['POST'])
 def salvar_maquina():
     conn = get_db_connection()
-    conn.execute('INSERT INTO maquinas (nome_equipamento, potencia, consumo_eletrico, velocidade, avanco, comprimento_max, diametro_max, frequencia_manutencao, horas_trabalhadas, preco_compra, depreciacao_mensal, valor_venda_final, custo_minuto_maquina) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)', (request.form['nome_equipamento'], float(request.form['potencia']), float(request.form['consumo_eletrico']), request.form['velocidade'], request.form['avanco'], float(request.form['comprimento_max'] or 0), float(request.form['diametro_max'] or 0), int(request.form['frequencia_manutencao']), int(request.form['horas_trabalhadas'] or 0), float(request.form['preco_compra']), float(request.form['depreciacao_mensal']), float(request.form['valor_venda_final']), float(request.form['custo_minuto_maquina'])))
+    conn.execute('''
+        INSERT INTO maquinas 
+        (nome_equipamento, potencia, consumo_eletrico, velocidade, avanco, comprimento_max, diametro_max, 
+         frequencia_manutencao, horas_trabalhadas, preco_compra, depreciacao_mensal, valor_venda_final, custo_minuto_maquina) 
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    ''', (request.form['nome_equipamento'], float(request.form['potencia']), float(request.form['consumo_eletrico']), request.form['velocidade'], request.form['avanco'], float(request.form['comprimento_max'] or 0), float(request.form['diametro_max'] or 0), int(request.form['frequencia_manutencao']), int(request.form['horas_trabalhadas'] or 0), float(request.form['preco_compra']), float(request.form['depreciacao_mensal']), float(request.form['valor_venda_final']), float(request.form['custo_minuto_maquina'])))
     conn.commit()
     conn.close()
     return redirect(url_for('maquinas'))
@@ -123,12 +156,15 @@ def salvar_maquina():
 @app.route('/alterar_maquina/<int:id>', methods=['POST'])
 def alterar_maquina(id):
     conn = get_db_connection()
-    conn.execute('UPDATE maquinas SET nome_equipamento=?, potencia=?, consumo_eletrico=?, velocidade=?, avanco=?, comprimento_max=?, diametro_max=?, frequencia_manutencao=?, horas_trabalhadas=?, preco_compra=?, depreciacao_mensal=?, valor_venda_final=?, custo_minuto_maquina=? WHERE id=?', (request.form['nome_equipamento'], float(request.form['potencia']), float(request.form['consumo_eletrico']), request.form['velocidade'], request.form['avanco'], float(request.form['comprimento_max'] or 0), float(request.form['diametro_max'] or 0), int(request.form['frequencia_manutencao']), int(request.form['horas_trabalhadas'] or 0), float(request.form['preco_compra']), float(request.form['depreciacao_mensal']), float(request.form['valor_venda_final']), float(request.form['custo_minuto_maquina']), id))
+    conn.execute('''
+        UPDATE maquinas 
+        SET nome_equipamento=?, potencia=?, consumo_eletrico=?, velocidade=?, avanco=?, comprimento_max=?, 
+            diametro_max=?, frequencia_manutencao=?, horas_trabalhadas=?, preco_compra=?, depreciacao_mensal=?, 
+            valor_venda_final=?, custo_minuto_maquina=? WHERE id=?
+    ''', (request.form['nome_equipamento'], float(request.form['potencia']), float(request.form['consumo_eletrico']), request.form['velocidade'], request.form['avanco'], float(request.form['comprimento_max'] or 0), float(request.form['diametro_max'] or 0), int(request.form['frequencia_manutencao']), int(request.form['horas_trabalhadas'] or 0), float(request.form['preco_compra']), float(request.form['depreciacao_mensal']), float(request.form['valor_venda_final']), float(request.form['custo_minuto_maquina']), id))
     conn.commit()
     conn.close()
     return redirect(url_for('maquinas'))
-
-# --- ROTAS DE REQUISIÇÕES DE COMPRAS ---
 @app.route('/salvar_requisicao', methods=['POST'])
 def salvar_requisicao():
     conn = get_db_connection()
@@ -160,11 +196,17 @@ def cotar_internet(id):
 def efetivar_compra(id):
     conn = get_db_connection()
     req = conn.execute('SELECT * FROM requisicoes_compras WHERE id = ?', (id,)).fetchone()
+    ult_imovel = conn.execute('SELECT aluguel_regional FROM investimentos_imobiliarios ORDER BY id DESC LIMIT 1').fetchone()
+    aluguel_mensal = ult_imovel['aluguel_regional'] if ult_imovel else 0
+    minutos_operacionais = 176 * 60
+    custo_aluguel_minuto = aluguel_mensal / minutos_operacionais
     if req:
         preco = float(request.form['preco_final'])
         pot = float(request.form['potencia_final'])
         dep = float(request.form['depreciacao_final'])
-        c_mm = (dep / (176 * 60)) + ((pot * 0.75) / 60)
+        custo_depreciacao_minuto = dep / minutos_operacionais
+        custo_energia_minuto = (pot * 0.75) / 60
+        c_mm = custo_depreciacao_minuto + custo_energia_minuto + custo_aluguel_minuto
         conn.execute('INSERT INTO maquinas (nome_equipamento, potencia, consumo_eletrico, velocidade, avanco, comprimento_max, diametro_max, frequencia_manutencao, horas_trabalhadas, preco_compra, depreciacao_mensal, valor_venda_final, custo_minuto_maquina) VALUES (?, ?, ?, "3000", "15000", 500, 300, 1000, 0, ?, ?, ?, ?)', (f"{req['equipamento_tipo']} - {req['especificacao_desejada']}", pot, pot * 0.7, preco, dep, preco * 0.2, c_mm))
         conn.execute("UPDATE requisicoes_compras SET status = 'Comprado e Ativado' WHERE id = ?", (id,))
         conn.commit()
@@ -178,6 +220,7 @@ def deletar_requisicao(id):
     conn.commit()
     conn.close()
     return redirect(url_for('requisicoes'))
+
 # --- ROTAS DA PÁGINA 4: MATERIAIS ---
 @app.route('/materiais')
 def materiais():
@@ -222,7 +265,6 @@ def deletar_material(id):
     conn.commit()
     conn.close()
     return redirect(url_for('materiais'))
-
 # --- ROTAS DA PÁGINA 5: ENGENHARIA DE PRODUTO ---
 @app.route('/engenharia')
 def engenharia():
@@ -277,6 +319,7 @@ def salvar_preco():
     conn.commit()
     conn.close()
     return redirect(url_for('precificacao'))
+
 # --- ROTAS DAS PÁGINAS 7 E 8: VENDAS E ESTOQUE BLINDADOS ---
 @app.route('/vendas')
 def vendas():
@@ -306,7 +349,6 @@ def abastecer_estoque():
     conn.commit()
     conn.close()
     return redirect(url_for('estoque'))
-
 @app.route('/lancar_venda', methods=['POST'])
 def lancar_venda():
     prod_id = int(request.form['produto_id'])
@@ -318,7 +360,7 @@ def lancar_venda():
         conn.close()
         return "Erro Pedagógico: Saldo de estoque insuficiente!"
     conn.execute('UPDATE estoque_produtos SET quantidade_disponivel = quantidade_disponivel - ? WHERE produto_id = ?', (qtd, prod_id))
-    conn.execute('INSERT INTO pedidos_vendas (produto_id, quantity, discount_percentual, observations) VALUES (?, ?, ?, ?)'.replace('quantity', 'quantidade').replace('discount_percentual', 'desconto_percentual').replace('observations', 'observacoes'), (prod_id, qtd, float(request.form['desconto_percentual'] or 0), request.form['observacoes']))
+    conn.execute('INSERT INTO pedidos_vendas (produto_id, quantidade, desconto_percentual, observacoes) VALUES (?, ?, ?, ?)', (prod_id, qtd, float(request.form['desconto_percentual'] or 0), request.form['observacoes']))
     conn.commit()
     conn.close()
     return redirect(url_for('vendas'))
@@ -346,7 +388,6 @@ def imprimir_nf(pedido_id):
     liq = sub - v_desc
     return render_template('nota_fiscal.html', p=ped, subtotal=sub, v_desconto=v_desc, total_liquido=liq, v_municipal=liq*(ped['imposto_municipal']/100), v_estadual=liq*(ped['imposto_estadual']/100), v_federal=liq*(ped['imposto_federal']/100), total_impostos=liq*((ped['imposto_municipal']+ped['imposto_estadual']+ped['imposto_federal'])/100))
 
-# --- ROTAS DA PÁGINA 9 E ROI: PCP E RETORNO ACIONÁRIO ---
 @app.route('/pcp')
 def pcp():
     conn = get_db_connection()
@@ -378,18 +419,15 @@ def roi():
         FROM pedidos_vendas pv 
         JOIN formacao_precos fp ON pv.produto_id = fp.produto_id
     ''').fetchone()
-    invs = conn.execute('SELECT COALESCE(SUM(valor_terreno + valor_instalacoes), 0) AS cap_imobilizado FROM investimentos_imobiliarios').fetchone()
+    invs = conn.execute('SELECT COALESCE(SUM(valor_imovel_estimado), 0) AS cap_imobilizado FROM investimentos_imobiliarios').fetchone()
     conn.close()
-    
     rec = v_dados['receita_bruta']
     pecas = v_dados['total_pecas']
     cap = invs['cap_imobilizado']
-    
     if cap > 0:
         roi_calculado = (rec / cap) * 100
     else:
         roi_calculado = 0.0
-        
     return render_template('roi.html', receita=rec, total_pecas=pecas, capital=cap, roi=roi_calculado)
 
 if __name__ == '__main__':
