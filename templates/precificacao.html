@@ -8,7 +8,7 @@
 <body>
 
 
-<!-- Barra de Acessibilidade Superior -->
+<!-- Barra de Acessibilidade Superior Oficial -->
 <div class="barra-acessibilidade">
     <button class="btn-acessibilidade" onclick="alternarAltoContraste()">Acessibilidade 🌓 Alto Contraste</button>
     <button class="btn-acessibilidade" onclick="mudarFonte(1)">A+</button>
@@ -19,18 +19,16 @@
 <header class="cabecalho-corporativo">
     <div class="identidade-container">
         <div class="branding-flex">
-            <!-- Logo oficial do repositório -->
             <img src="{{ url_for('static', filename='logo.png') }}" alt="Logo TERADMAS" style="height: 65px; width: auto; object-fit: contain; border-radius: 4px;">
             <div class="texto-empresa">
                 <h1>TERCEIRO ADM ASSOCIADOS</h1>
-                <p>Projetos, Execução, Assessoria, Auditoria e Gerenciamento Operacional e de Custos</p>
+                <p>Módulo 4: Gestão do Fluxo Financeiro, Caixa e Demonstrativo de Resultados</p>
             </div>
         </div>
-        <!-- Botão Hambúrguer para Celular -->
         <button class="menu-hamburguer" onclick="alternarMenuMobile()">☰</button>
     </div>
 
-    <!-- Navegação Responsiva com Menus Dropdown -->
+    <!-- Navegação Responsiva com Menus Dropdown Unificados -->
     <nav class="nav-container" id="menuNavegacao">
         <ul class="menu-cascata">
             <li class="item-menu">
@@ -38,28 +36,25 @@
                 <ul class="sub-menu">
                     <li><a href="/estrutura">1. Investimentos Imobiliários</a></li>
                     <li><a href="/maquinas">2. Engenharia de Ativos (Máquinas)</a></li>
-                    <li><a href="/materiais">3. Almoxarifado (Materiais)</a></li>
+                    <li><a href="/rh">👥 3. Gestão de Pessoal (RH)</a></li>
+                    <li><a href="/financeiro" style="background: #eef9ff; color: #007bff; font-weight: bold;">💰 4. Fluxo Financeiro</a></li>
+                    <li><a href="/requisicoes">📋 5. Central de Requisições</a></li>
+                    <li><a href="/compras">🛒 6. Cockpit de Suprimentos</a></li>
+                    <li><a href="/materiais">7. Almoxarifado (Materiais)</a></li>
                 </ul>
             </li>
             <li class="item-menu">
                 <a href="#" class="link-principal">🛠️ Custos & Engenharia ▾</a>
                 <ul class="sub-menu">
-                    <li><a href="/engenharia">4. Engenharia de Produto (BOM)</a></li>
-                    <li><a href="/precificacao">5. Controladoria e Precificação</a></li>
+                    <li><a href="/engenharia">8. Engenharia de Produto (BOM)</a></li>
+                    <li><a href="/precificacao">9. Controladoria e Precificação</a></li>
                 </ul>
             </li>
             <li class="item-menu">
                 <a href="#" class="link-principal">💰 Operações Comerciais ▾</a>
                 <ul class="sub-menu">
-                    <li><a href="/vendas">6. Painel de Vendas Comerciais</a></li>
-                    <li><a href="/estoque">7. Inventário de Acabados</a></li>
-                </ul>
-            </li>
-            <li class="item-menu">
-                <a href="#" class="link-principal">🏭 Chão de Fábrica & ROI ▾</a>
-                <ul class="sub-menu">
-                    <li><a href="/pcp">8. Planilha de Processos (PCP)</a></li>
-                    <li><a href="/roi">9. Indicadores de Retorno (ROI)</a></li>
+                    <li><a href="/vendas">10. Painel de Vendas Comerciais</a></li>
+                    <li><a href="/estoque">11. Inventário de Acabados</a></li>
                 </ul>
             </li>
         </ul>
