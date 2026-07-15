@@ -7,7 +7,6 @@
 </head>
 <body>
 
-
 <!-- Barra de Acessibilidade Superior -->
 <div class="barra-acessibilidade">
     <button class="btn-acessibilidade" onclick="alternarAltoContraste()">Acessibilidade 🌓 Alto Contraste</button>
@@ -19,18 +18,15 @@
 <header class="cabecalho-corporativo">
     <div class="identidade-container">
         <div class="branding-flex">
-            <!-- Logo oficial do repositório -->
             <img src="{{ url_for('static', filename='logo.png') }}" alt="Logo TERADMAS" style="height: 65px; width: auto; object-fit: contain; border-radius: 4px;">
             <div class="texto-empresa">
                 <h1>TERCEIRO ADM ASSOCIADOS</h1>
                 <p>Projetos, Execução, Assessoria, Auditoria e Gerenciamento Operacional e de Custos</p>
             </div>
         </div>
-        <!-- Botão Hambúrguer para Celular -->
         <button class="menu-hamburguer" onclick="alternarMenuMobile()">☰</button>
     </div>
 
-    <!-- Navegação Responsiva com Menus Dropdown -->
     <nav class="nav-container" id="menuNavegacao">
         <ul class="menu-cascata">
             <li class="item-menu">
@@ -66,157 +62,227 @@
     </nav>
 </header>
 
-
+<div class="container">
+    <h2>Página 2: Investimentos Imobiliários e Estrutura de Custos</h2>
     
-    <div class="container">
-        <h2>Página 2: Investimentos Imobiliários e Estrutura de Custos</h2>
-        
-        <!-- Formulário de Cadastro/Alteração -->
-        <div style="background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.1);">
-            <form id="formEstrutura" action="/salvar_estrutura" method="POST">
-                <input type="hidden" id="registro_id" name="id">
+    <div style="background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.1);">
+        <form id="formEstrutura" action="/salvar_estrutura" method="POST">
+            <input type="hidden" id="registro_id" name="id">
+            
+            <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px;">
+                <div class="form-group">
+                    <label>Identificação da Simulação / Turma:</label>
+                    <input type="text" name="turma_nome" id="turma_nome" required placeholder="Ex: Turma A - Grupo 1">
+                </div>
+                <div class="form-group">
+                    <label>Cidade / Região:</label>
+                    <select name="cidade_regiao" id="cidade_regiao" required onchange="atualizarBairros()">
+                        <option value="">Selecione a Região...</option>
+                        <option value="Curitiba Zonas Nobres">Curitiba (Zonas Nobres)</option>
+                        <option value="Curitiba Zonas Mistas">Curitiba (Zonas Mistas/Industriais)</option>
+                        <option value="Regiao Metropolitana">Região Metropolitana (RMC)</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Bairro / Localidade:</label>
+                    <select name="bairro_imovel" id="bairro_imovel" required onchange="aplicarValoresReferencia()">
+                        <option value="">Selecione o Bairro...</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Área Total do Imóvel (m²):</label>
+                    <input type="number" step="0.01" name="area_imovel" id="area_imovel" required oninput="calcularMetricas()">
+                </div>
+                <div class="form-group">
+                    <label>Taxa Imobiliária Referência (% a.a.):</label>
+                    <input type="number" step="0.01" name="taxa_selic" id="taxa_selic" value="{{ taxa_atual }}" required oninput="calcularMetricas()">
+                </div>
+                <div class="form-group">
+                    <label>Valor do Imóvel (R$) - *Negociável*:</label>
+                    <input type="number" step="0.01" name="valor_imovel_estimado" id="valor_imovel_estimado" required oninput="calcularMetricas()">
+                </div>
+                <div class="form-group">
+                    <label>Aluguel Praticado (R$/mês) - *Negociável*:</label>
+                    <input type="number" step="0.01" name="aluguel_regional" id="aluguel_regional" required oninput="calcularMetricas()">
+                </div>
+                <div class="form-group">
+                    <label>Retorno aos Acionistas (% do Aluguel):</label>
+                    <input type="number" step="0.01" name="perc_acionistas" id="perc_acionistas" min="0" max="100" required placeholder="Ex: 50" oninput="calcularMetricas()">
+                </div>
                 
-                <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px;">
-                    <div class="form-group">
-                        <label>Identificação da Simulação / Turma:</label>
-                        <input type="text" name="turma_nome" id="turma_nome" required placeholder="Ex: Turma A - Grupo 1">
-                    </div>
-                    <div class="form-group">
-                        <label>Valor do Terreno (R$):</label>
-                        <input type="number" step="0.01" name="valor_terreno" id="valor_terreno" required oninput="calcularMetricas()">
-                    </div>
-                    <div class="form-group">
-                        <label>Valor das Instalações e Edificações (R$):</label>
-                        <input type="number" step="0.01" name="valor_instalacoes" id="valor_instalacoes" required oninput="calcularMetricas()">
-                    </div>
-                    <div class="form-group">
-                        <label>Taxa Imobiliária Referência (% a.a.):</label>
-                        <input type="number" step="0.01" name="taxa_selic" id="taxa_selic" value="{{ taxa_atual }}" required oninput="calcularMetricas()">
-                    </div>
-                    <div class="form-group">
-                        <label>Valor Médio Aluguel de Mesmo Porte (R$/mês):</label>
-                        <input type="number" step="0.01" name="aluguel_regional" id="aluguel_regional" required oninput="calcularMetricas()">
-                    </div>
-                    
-                    <!-- CAMPOS AUTOMÁTICOS PEDAGÓGICOS (READONLY) -->
-                    <div class="form-group">
-                        <label>Retorno aos Acionistas (50% do Aluguel):</label>
-                        <input type="text" id="retorno_acionistas" readonly value="R$ 0,00">
-                    </div>
-                    <div class="form-group">
-                        <label>Estimativa de Payback (Meses para Abater):</label>
-                        <input type="text" id="payback_estimado" readonly value="0 meses">
-                    </div>
-                    <div class="form-group">
-                        <label>Custo Aluguel Diluído por Minuto:</label>
-                        <input type="text" id="aluguel_minuto" readonly value="R$ 0,0000">
-                    </div>
+                <!-- CAMPOS AUTOMÁTICOS PEDAGÓGICOS -->
+                <div class="form-group">
+                    <label>Valor Retorno Acionistas (R$):</label>
+                    <input type="text" id="retorno_acionistas" readonly value="R$ 0,00" style="background-color: #e9ecef;">
                 </div>
-
-                <div style="margin-top: 20px;">
-                    <button type="submit" id="btnSalvar" class="btn btn-success">💾 Salvar Novo Registro</button>
-                    <button type="button" id="btnCancelar" class="btn btn-danger" style="display:none;" onclick="cancelarEdicao()">Cancelar Edição</button>
+                <div class="form-group">
+                    <label>Tempo de Payback Relativo (Meses):</label>
+                    <input type="text" id="payback_estimado" readonly value="0 meses" style="background-color: #e9ecef;">
                 </div>
-            </form>
-        </div>
-
-        <!-- Tabela para Consulta, Alteração e Deleção -->
-        <h3>Simulações Salvas no Banco de Dados</h3>
-        <table class="data-table">
-            <thead>
-                <tr>
-                    <th>Turma/Grupo</th>
-                    <th>Valor Terreno</th>
-                    <th>Instalações</th>
-                    <th>Taxa Ref.</th>
-                    <th>Aluguel Reg.</th>
-                    <th>Ações</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for reg in registros %}
-                <tr>
-                    <td>{{ reg.turma_nome }}</td>
-                    <td>R$ {{ "%.2f"|format(reg.valor_terreno) }}</td>
-                    <td>R$ {{ "%.2f"|format(reg.valor_instalacoes) }}</td>
-                    <td>{{ reg.taxa_selic }}%</td>
-                    <td>R$ {{ "%.2f"|format(reg.aluguel_regional) }}</td>
-                    <td>
-                        <!-- Botão Alterar: joga os dados de volta para o formulário superior via JS -->
-                        <button class="btn btn-primary" onclick="prepararEdicao('{{ reg.id }}', '{{ reg.turma_nome }}', '{{ reg.valor_terreno }}', '{{ reg.valor_instalacoes }}', '{{ reg.taxa_selic }}', '{{ reg.aluguel_regional }}')">✏️ Alterar</button>
-                        
-                        <!-- Botão Deletar -->
-                        <form action="/deletar_estrutura/{{ reg.id }}" method="POST" style="display:inline;" onsubmit="return confirm('Deseja realmente deletar esta simulação?');">
-                            <button type="submit" class="btn btn-danger">❌ Deletar</button>
-                        </form>
-                    </td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
+                <div class="form-group">
+                    <label>Custo Aluguel Diluído por Minuto:</label>
+                    <input type="text" id="aluguel_minuto" readonly value="R$ 0,0000" style="background-color: #e9ecef;">
+                </div>
+            </div>
+            <div style="margin-top: 20px;">
+                <button type="submit" id="btnSalvar" class="btn btn-success">💾 Salvar Novo Registro</button>
+                <button type="button" id="btnCancelar" class="btn btn-danger" style="display:none;" onclick="cancelarEdicao()">Cancelar Edição</button>
+            </div>
+        </form>
     </div>
 
-    <!-- SCRIPT DE INTELIGÊNCIA MATEMÁTICA E MANIPULAÇÃO DO DOM -->
-    <script>
-        function calcularMetricas() {
-            const terreno = parseFloat(document.getElementById('valor_terreno').value) || 0;
-            const instalacoes = parseFloat(document.getElementById('valor_instalacoes').value) || 0;
-            const aluguel = parseFloat(document.getElementById('aluguel_regional').value) || 0;
-            
-            const totalInvestido = terreno + instalacoes;
+    <h3>Simulações Salvas no Banco de Dados</h3>
+    <table class="data-table">
+        <thead>
+            <tr>
+                <th>Turma/Grupo</th>
+                <th>Região / Bairro</th>
+                <th>Área (m²)</th>
+                <th>Taxa Ref.</th>
+                <th>Valor Imóvel</th>
+                <th>Aluguel Praticado</th>
+                <th>% Acionistas</th>
+                <th>Ações</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for reg in registros %}
+            <tr>
+                <td>{{ reg.turma_nome }}</td>
+                <td>{{ reg.cidade_regiao }} - {{ reg.bairro_imovel }}</td>
+                <td>{{ "%.2f"|format(reg.area_imovel) }} m²</td>
+                <td>{{ reg.taxa_selic }}%</td>
+                <td>R$ {{ "%.2f"|format(reg.valor_imovel_estimado) }}</td>
+                <td>R$ {{ "%.2f"|format(reg.aluguel_regional) }}</td>
+                <td>{{ reg.perc_acionistas }}%</td>
+                <td>
+                    <button class="btn btn-primary" onclick="prepararEdicao('{{ reg.id }}', '{{ reg.turma_nome }}', '{{ reg.cidade_regiao }}', '{{ reg.bairro_imovel }}', '{{ reg.area_imovel }}', '{{ reg.taxa_selic }}', '{{ reg.valor_imovel_estimado }}', '{{ reg.aluguel_regional }}', '{{ reg.perc_acionistas }}')">✏️ Alterar</button>
+                    
+                    <form action="/deletar_estrutura/{{ reg.id }}" method="POST" style="display:inline;" onsubmit="return confirm('Deseja realmente deletar esta simulação?');">
+                        <button type="submit" class="btn btn-danger">❌ Deletar</button>
+                    </form>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
 
-            // 1. Parcela de Retorno aos Acionistas (50% do valor do aluguel regional)
-            const retorno = aluguel * 0.5;
-            document.getElementById('retorno_acionistas').value = "R$ " + retorno.toFixed(2).replace('.', ',');
+<script>
+    // Banco de dados imobiliário local (Médias de Mercado Referenciais para Curitiba e Região)
+    const dadosImobiliarios = {
+        "Curitiba Zonas Nobres": {
+            "Batel": { m2: 15500, aluguel_m2: 55 },
+            "Bigorrilho": { m2: 13500, aluguel_m2: 48 },
+            "Ecoville": { m2: 12500, aluguel_m2: 45 },
+            "Cabral": { m2: 12000, aluguel_m2: 42 }
+        },
+        "Curitiba Zonas Mistas": {
+            "CIC (Cidade Industrial)": { m2: 8500, aluguel_m2: 30 },
+            "Boqueirão": { m2: 7800, aluguel_m2: 28 },
+            "Novo Mundo": { m2: 8000, aluguel_m2: 32 },
+            "Pinheirinho": { m2: 7500, aluguel_m2: 27 }
+        },
+        "Regiao Metropolitana": {
+            "São José dos Pinhais": { m2: 6800, aluguel_m2: 25 },
+            "Araucária": { m2: 6500, aluguel_m2: 24 },
+            "Pinhais": { m2: 7000, aluguel_m2: 26 },
+            "Colombo": { m2: 5800, aluguel_m2: 20 }
+        }
+    };
 
-            // 2. Estimativa de Payback em meses (Total Investido / Parcela Retorno)
-            if (retorno > 0) {
-                const meses = totalInvestido / retorno;
-                document.getElementById('payback_estimado').value = Math.ceil(meses) + " meses";
-            } else {
-                document.getElementById('payback_estimado').value = "0 meses";
-            }
+    function atualizarBairros() {
+        const regiaoSel = document.getElementById('cidade_regiao').value;
+        const comboBairro = document.getElementById('bairro_imovel');
+        
+        comboBairro.innerHTML = '<option value="">Selecione o Bairro...</option>';
+        
+        if (regiaoSel && dadosImobiliarios[regiaoSel]) {
+            Object.keys(dadosImobiliarios[regiaoSel]).forEach(bairro => {
+                let opt = document.createElement('option');
+                opt.value = bairro;
+                opt.innerHTML = bairro;
+                comboBairro.appendChild(opt);
+            });
+        }
+        calcularMetricas();
+    }
 
-            // 3. Aluguel diluído por minuto operacional
-            // Considerando um padrão de turno industrial padrão de 176 horas por mês
-            // 176 horas * 60 minutos = 10.560 minutos operacionais por mês
-            const minutosNoMes = 176 * 60;
-            const custoMinuto = aluguel / minutosNoMes;
-            document.getElementById('aluguel_minuto').value = "R$ " + custoMinuto.toFixed(4).replace('.', ',');
+    function aplicarValoresReferencia() {
+        const regiaoSel = document.getElementById('cidade_regiao').value;
+        const bairroSel = document.getElementById('bairro_imovel').value;
+        const area = parseFloat(document.getElementById('area_imovel').value) || 0;
+
+        if (regiaoSel && bairroSel && area > 0) {
+            const ref = dadosImobiliarios[regiaoSel][bairroSel];
+            // Preenche valores base de mercado, mas deixa abertos para negociação dos alunos!
+            document.getElementById('valor_imovel_estimado').value = (area * ref.m2).toFixed(2);
+            document.getElementById('aluguel_regional').value = (area * ref.aluguel_m2).toFixed(2);
+        }
+        calcularMetricas();
+    }
+
+    function calcularMetricas() {
+        const valorImovel = parseFloat(document.getElementById('valor_imovel_estimado').value) || 0;
+        const aluguelPraticado = parseFloat(document.getElementById('aluguel_regional').value) || 0;
+        const percAcionistas = parseFloat(document.getElementById('perc_acionistas').value) || 0;
+        
+        const ALIQUOTA_TRIBUTOS = 0.15; // 15% impostos sobre locação
+        const MINUTOS_OPERACIONAIS_MES = 176 * 60; // 10.560 minutos
+
+        // 1. Retorno Financeiro dos Acionistas
+        const retornoAcionistasRs = aluguelPraticado * (percAcionistas / 100);
+        document.getElementById('retorno_acionistas').value = "R$ " + retornoAcionistasRs.toFixed(2).replace('.', ',');
+
+        // 2. Payback Relativo Líquido
+        const tributosMensais = aluguelPraticado * ALIQUOTA_TRIBUTOS;
+        const sobraMensalLiquida = aluguelPraticado - tributosMensais - retornoAcionistasRs;
+
+        if (sobraMensalLiquida > 0 && valorImovel > 0) {
+            const meses = valorImovel / sobraMensalLiquida;
+            document.getElementById('payback_estimado').value = Math.ceil(meses) + " meses";
+        } else {
+            document.getElementById('payback_estimado').value = "Incalculável (Rendimento Insuficiente)";
         }
 
-        // Função do Botão Alterar: Transforma o formulário de salvar em formulário de edição
-        function prepararEdicao(id, nome, terreno, instalacoes, taxa, aluguel) {
-            document.getElementById('formEstrutura').action = '/alterar_estrutura/' + id;
-            document.getElementById('turma_nome').value = nome;
-            document.getElementById('valor_terreno').value = terreno;
-            document.getElementById('valor_instalacoes').value = instalacoes;
-            document.getElementById('taxa_selic').value = taxa;
-            document.getElementById('aluguel_regional').value = aluguel;
-            
-            document.getElementById('btnSalvar').innerText = "🔄 Confirmar Alterações";
-            document.getElementById('btnCancelar').style.display = "inline-block";
-            calcularMetricas();
-        }
+        // 3. Minuto-Máquina
+        const custoMinuto = aluguelPraticado / MINUTOS_OPERACIONAIS_MES;
+        document.getElementById('aluguel_minuto').value = "R$ " + custoMinuto.toFixed(4).replace('.', ',');
+    }
 
-        function cancelarEdicao() {
-            document.getElementById('formEstrutura').action = '/salvar_estrutura';
-            document.getElementById('formEstrutura').reset();
-            document.getElementById('btnSalvar').innerText = "💾 Salvar Novo Registro";
-            document.getElementById('btnCancelar').style.display = "none";
-            calcularMetricas();
-        }
-    </script>
+    function prepararEdicao(id, nome, regiao, bairro, area, taxa, valorImovel, aluguel, percAcionistas) {
+        document.getElementById('formEstrutura').action = '/alterar_estrutura/' + id;
+        document.getElementById('turma_nome').value = nome;
+        document.getElementById('cidade_regiao').value = regiao;
+        
+        atualizarBairros();
+        document.getElementById('bairro_imovel').value = bairro;
+        
+        document.getElementById('area_imovel').value = area;
+        document.getElementById('taxa_selic').value = taxa;
+        document.getElementById('valor_imovel_estimado').value = valorImovel;
+        document.getElementById('aluguel_regional').value = aluguel;
+        document.getElementById('perc_acionistas').value = percAcionistas;
+        
+        document.getElementById('btnSalvar').innerText = "🔄 Confirmar Alterações";
+        document.getElementById('btnCancelar').style.display = "inline-block";
+        calcularMetricas();
+    }
 
+    function cancelarEdicao() {
+        document.getElementById('formEstrutura').action = '/salvar_estrutura';
+        document.getElementById('formEstrutura').reset();
+        document.getElementById('bairro_imovel').innerHTML = '<option value="">Selecione o Bairro...</option>';
+        document.getElementById('btnSalvar').innerText = "💾 Salvar Novo Registro";
+        document.getElementById('btnCancelar').style.display = "none";
+        calcularMetricas();
+    }
 
-    <script>
-    // Função para abrir e fechar o menu hambúrguer no celular
     function alternarMenuMobile() {
         const menu = document.getElementById('menuNavegacao');
         menu.classList.toggle('ativo');
     }
 
-    // Controle do tamanho das fontes para as Big TVs ou baixa visão
     let tamanhoAtual = 100;
     function mudarFonte(direcao) {
         tamanhoAtual += (direcao * 10);
@@ -225,7 +291,6 @@
         }
     }
 
-    // Controle do modo de alto contraste
     function alternarAltoContraste() {
         const corpo = document.body;
         if (corpo.style.filter === "invert(1) contrast(1.2)") {
@@ -237,6 +302,5 @@
         }
     }
 </script>
-
 </body>
 </html>
