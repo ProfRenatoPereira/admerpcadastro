@@ -6,146 +6,181 @@
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 </head>
 <body>
-    <!-- Barra de Acessibilidade Superior -->
-    <div class="barra-acessibilidade">
-        <button class="btn-acessibilidade" onclick="alternarAltoContraste()">Acessibilidade 🌓 Alto Contraste</button>
-        <button class="btn-acessibilidade" onclick="mudarFonte(1)">A+</button>
-        <button class="btn-acessibilidade" onclick="mudarFonte(-1)">A-</button>
+
+<!-- Barra de Acessibilidade Superior -->
+<div class="barra-acessibilidade">
+    <button class="btn-acessibilidade" onclick="alternarAltoContraste()">Acessibilidade 🌓 Alto Contraste</button>
+    <button class="btn-acessibilidade" onclick="mudarFonte(1)">A+</button>
+    <button class="btn-acessibilidade" onclick="mudarFonte(-1)">A-</button>
+</div>
+
+<!-- Cabeçalho Principal Terceiro ADM Associados -->
+<header class="cabecalho-corporativo">
+    <div class="identidade-container">
+        <div class="branding-flex">
+            <img src="{{ url_for('static', filename='logo.png') }}" alt="Logo TERADMAS" style="height: 65px; width: auto; object-fit: contain; border-radius: 4px;">
+            <div class="texto-empresa">
+                <h1>TERCEIRO ADM ASSOCIADOS</h1>
+                <p>Projetos, Execução, Assessoria, Auditoria e Gerenciamento Operacional e de Custos</p>
+            </div>
+        </div>
+        <button class="menu-hamburguer" onclick="alternarMenuMobile()">☰</button>
     </div>
 
-    <!-- Cabeçalho Principal Terceiro ADM Associados -->
-    <header class="cabecalho-corporativo">
-        <div class="identidade-container">
-            <div class="branding-flex">
-                <img src="{{ url_for('static', filename='logo.png') }}" alt="Logo TERADMAS" style="height: 65px; width: auto; object-fit: contain; border-radius: 4px;">
-                <div class="texto-empresa">
-                    <h1>TERCEIRO ADM ASSOCIADOS</h1>
-                    <p>Projetos, Execução, Assessoria, Auditoria e Gerenciamento Operacional e de Custos</p>
+    <!-- Navegação Responsiva com Menus Dropdown -->
+    <nav class="nav-container" id="menuNavegacao">
+        <ul class="menu-cascata">
+            <li class="item-menu">
+                <a href="#" class="link-principal">🏢 Módulos Iniciais ▾</a>
+                <ul class="sub-menu">
+                    <li><a href="/estrutura">1. Investimentos Imobiliários</a></li>
+                    <li><a href="/maquinas">2. Engenharia de Ativos (Máquinas)</a></li>
+                    <li><a href="/requisicoes">📋 3. Central de Requisições</a></li>
+                    <li><a href="/compras">💰 4. Cockpit de Suprimentos</a></li>
+                    <li><a href="/materiais">5. Almoxarifado (Materiais)</a></li>
+                </ul>
+            </li>
+            <li class="item-menu">
+                <a href="#" class="link-principal">🛠️ Custos & Engenharia ▾</a>
+                <ul class="sub-menu">
+                    <li><a href="/engenharia">6. Engenharia de Produto (BOM)</a></li>
+                    <li><a href="/precificacao">7. Controladoria e Precificação</a></li>
+                </ul>
+            </li>
+            <li class="item-menu">
+                <a href="#" class="link-principal">💰 Operações Comerciais ▾</a>
+                <ul class="sub-menu">
+                    <li><a href="/vendas">8. Painel de Vendas Comerciais</a></li>
+                    <li><a href="/estoque">9. Inventário de Acabados</a></li>
+                </ul>
+            </li>
+            <li class="item-menu">
+                <a href="#" class="link-principal">🏭 Chão de Fábrica & ROI ▾</a>
+                <ul class="sub-menu">
+                    <li><a href="/pcp">10. Planilha de Processos (PCP)</a></li>
+                    <li><a href="/roi">11. Indicadores de Retorno (ROI)</a></li>
+                </ul>
+            </li>
+        </ul>
+    </nav>
+</header>
+<div class="container">
+    <h2>Página 8: Painel de Vendas e Faturamento de Pedidos</h2>
+    
+    <!-- Bloco de Resposta de Prazos do ERP / Mensagens Flash -->
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+        {% for category, message in messages %}
+          <div class="alert alert-{{ category }}" style="padding: 15px; margin-bottom: 20px; border-radius: 4px; background-color: {% if category=='success' %}#d4edda{% elif category=='warning' %}#fff3cd{% else %}#f8d7da{% endif %}; color: {% if category=='success' %}#155724{% elif category=='warning' %}#856404{% else %}#721c24{% endif %}; font-weight: bold; border: 1px solid;">
+            {{ message }}
+          </div>
+        {% endfor %}
+      {% endif %}
+    {% endwith %}
+
+    <!-- Lançamento Comercial -->
+    <div style="background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); margin-bottom: 25px;">
+        <h3>✍️ Registrar Nova Transação Comercial</h3>
+        <form action="/lancar_venda" method="POST">
+            <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 15px;">
+                <div class="form-group">
+                    <label>Selecionar Produto:</label>
+                    <select name="produto_id" id="vendas_produto_id" required onchange="verificarDisponibilidadeBotao()" style="width:100%; padding:10px; border-radius:4px; border:1px solid #bdc3c7;">
+                        {% for prod in produtos %}
+                            <option value="{{ prod.id }}" data-estoque="{{ prod.estoque_atual }}">
+                                {{ prod.codigo_produto }} - {{ prod.nome_produto }} (Estoque: {{ prod.estoque_atual }} un)
+                            </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Quantidade:</label>
+                    <input type="number" name="quantidade" id="vendas_quantidade" min="1" required value="1" oninput="verificarDisponibilidadeBotao()">
+                </div>
+                <div class="form-group">
+                    <label>Desconto Concedido (%):</label>
+                    <input type="number" step="0.01" name="desconto_percentual" min="0" max="100" value="0">
+                </div>
+                <div class="form-group">
+                    <label>Condições / Observações:</label>
+                    <input type="text" name="observacoes" placeholder="Ex: Cliente solicita entrega expressa">
                 </div>
             </div>
-            <button class="menu-hamburguer" onclick="alternarMenuMobile()">☰</button>
-        </div>
-
-        <!-- Navegação Responsiva com Menus Dropdown -->
-        <nav class="nav-container" id="menuNavegacao">
-            <ul class="menu-cascata">
-                <li class="item-menu">
-                    <a href="#" class="link-principal">🏢 Módulos Iniciais ▾</a>
-                    <ul class="sub-menu">
-                        <li><a href="/estrutura">1. Investimentos Imobiliários</a></li>
-                        <li><a href="/maquinas">2. Engenharia de Ativos (Máquinas)</a></li>
-                        <li><a href="/materiais">3. Almoxarifado (Materiais)</a></li>
-                    </ul>
-                </li>
-                <li class="item-menu">
-                    <a href="#" class="link-principal">🛠️ Custos & Engenharia ▾</a>
-                    <ul class="sub-menu">
-                        <li><a href="/engenharia">4. Engenharia de Produto (BOM)</a></li>
-                        <li><a href="/precificacao">5. Controladoria e Precificação</a></li>
-                    </ul>
-                </li>
-                <li class="item-menu">
-                    <a href="#" class="link-principal">💰 Operações Comerciais ▾</a>
-                    <ul class="sub-menu">
-                        <li><a href="/vendas">6. Painel de Vendas Comerciais</a></li>
-                        <li><a href="/estoque">7. Inventário de Acabados</a></li>
-                    </ul>
-                </li>
-                <li class="item-menu">
-                    <a href="#" class="link-principal">🏭 Chão de Fábrica & ROI ▾</a>
-                    <ul class="sub-menu">
-                        <li><a href="/pcp">8. Planilha de Processos (PCP)</a></li>
-                        <li><a href="/roi">9. Indicadores de Retorno (ROI)</a></li>
-                    </ul>
-                </li>
-            </ul>
-        </nav>
-    </header>
-    <div class="container">
-        <h2>Página 7: Departamento Comercial - Painel de Vendas</h2>
-        
-        <!-- Formulário Corrigido com o termo 'quantidade' -->
-        <div style="background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.1);">
-            <form action="/lancar_venda" method="POST">
-                <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 15px;">
-                    <div class="form-group">
-                        <label>Produto Comercializável:</label>
-                        <select name="produto_id" required style="padding:10px; border-radius:4px;">
-                            <option value="">-- Selecione --</option>
-                            {% for prod in produtos %}
-                            <option value="{{ prod.id }}">
-                                {{ prod.codigo_produto }} - {{ prod.nome_produto }} (Preço: R$ {{ "%.2f"|format(prod.preco_venda_final) }} | Estoque: {{ prod.estoque_atual }})
-                            </option>
-                            {% endfor %}
-                        </select>
-                    </div>
-                    <div class="form-group">
-                        <label>Quantidade:</label>
-                        <input type="number" name="quantidade" required min="1" value="1">
-                    </div>
-                    <div class="form-group">
-                        <label>Desconto Adicional (%):</label>
-                        <input type="number" step="0.1" name="desconto_percentual" min="0" max="100" value="0">
-                    </div>
-                    <div class="form-group">
-                        <label>Observações da NF:</label>
-                        <input type="text" name="observacoes" placeholder="Ex: Isenção parcial conf. Artigo X">
-                    </div>
-                </div>
-                <div style="margin-top: 15px;">
-                    <button type="submit" class="btn btn-success">⚙️ Processar Faturamento e Enviar ao PCP</button>
-                </div>
-            </form>
-        </div>
-
-        <h3>Pedidos Faturados</h3>
-        <table class="data-table">
-            <thead>
-                <tr>
-                    <th>OS / ID</th>
-                    <th>Produto</th>
-                    <th>Quantidade</th>
-                    <th>Desconto</th>
-                    <th>Ações Disponíveis</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for ped in pedidos %}
-                <tr>
-                    <td><code>NF-{{ ped.id }}</code></td>
-                    <td><strong>{{ ped.nome_produto }}</strong></td>
-                    <td>{{ ped.quantidade }} un</td>
-                    <td>{{ ped.desconto_percentual }}%</td>
-                    <td>
-                        <a href="/imprimir_nf/{{ ped.id }}" target="_blank" class="btn btn-success" style="text-decoration:none; display:inline-block; font-size:13px;">🖨️ Imprimir NF</a>
-                        <form action="/deletar_venda/{{ ped.id }}" method="POST" style="display:inline;" onsubmit="return confirm('Deseja estornar esta venda?');">
-                            <button type="submit" class="btn btn-danger" style="padding:5px 10px;">❌ Cancelar</button>
-                        </form>
-                    </td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
+            <div style="margin-top: 20px;">
+                <button type="submit" id="btnAcaoVendas" class="btn btn-success" style="width: 100%; font-weight: bold;"></button>
+            </div>
+        </form>
     </div>
 
-    <!-- SCRIPTS COMPARTILHADOS DE INTELIGÊNCIA VISUAL -->
-    <script>
-        function alternarMenuMobile() {
-            const menu = document.getElementById('menuNavegacao');
-            menu.classList.toggle('ativo');
-        }
+    <h3>🧾 Histórico de Faturamento e Carteira de Pedidos</h3>
+    <table class="data-table">
+        <thead>
+            <tr>
+                <th>ID Transação</th>
+                <th>Código / Item</th>
+                <th>Volume</th>
+                <th>Preço Unitário</th>
+                <th>Logística / Observações Cadastradas</th>
+                <th>Ações Fiscais</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for ped in pedidos %}
+            <tr>
+                <td><code>NF-00{{ ped.id }}</code></td>
+                <td><code>{{ ped.codigo_produto }}</code> - {{ ped.nome_produto }}</td>
+                <td>{{ ped.quantidade }} un</td>
+                <td>R$ {{ "%.2f"|format(ped.preco_venda_final) }}</td>
+                <td><small style="color: #444; font-weight: 500;">{{ ped.observacoes }}</small></td>
+                <td>
+                    <a href="/imprimir_nf/{{ ped.id }}" target="_blank" class="btn btn-primary" style="font-size: 11px; padding: 4px 8px; text-decoration: none;">🖨️ Emitir Danfe / NF</a>
+                    <form action="/deletar_venda/{{ ped.id }}" method="POST" style="display:inline;" onsubmit="return confirm('Deseja estornar esta transação e devolver os itens?');">
+                        <button type="submit" class="btn btn-danger" style="font-size: 11px; padding: 4px 8px;">❌ Estornar</button>
+                    </form>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+<script>
+function verificarDisponibilidadeBotao() {
+    const select = document.getElementById('vendas_produto_id');
+    if (!select.options.length) return;
+    
+    const option = select.options[select.selectedIndex];
+    const estoqueDisponivel = parseFloat(option.getAttribute('data-estoque')) || 0;
+    const qtdDigitada = parseFloat(document.getElementById('vendas_quantidade').value) || 0;
+    const btn = document.getElementById('btnAcaoVendas');
+    
+    if(qtdDigitada > estoqueDisponivel) {
+        btn.innerText = "🛒 Emitir Pedido sob Encomenda (Calcular Prazo de Entrega via PCP)";
+        btn.className = "btn btn-primary"; // Muda a cor para azul sinalizando encomenda
+    } else {
+        btn.innerText = "💾 Efetivar Venda Imediata (Faturar do Estoque Disponível)";
+        btn.className = "btn btn-success"; // Mantém verde para faturamento imediato
+    }
+}
 
-        let tamanhoAtual = 100;
-        function mudarFonte(direcao) {
-            tamanhoAtual += (direcao * 10);
-            if(tamanhoAtual >= 70 && tamanhoAtual <= 160) {
-                document.body.style.fontSize = tamanhoAtual + "%";
-            }
-        }
+// Inicializa a verificação assim que os dados carregam
+window.onload = function() {
+    verificarDisponibilidadeBotao();
+};
 
-        function alternarAltoContraste() {
-            document.body.classList.toggle('alto-contraste-ativo');
-        }
-    </script>
+function alternarMenuMobile() { document.getElementById('menuNavegacao').classList.toggle('ativo'); }
+let tamanhoAtual = 100;
+function mudarFonte(direcao) {
+    tamanhoAtual += (direcao * 10);
+    if(tamanhoAtual >= 70 && tamanhoAtual <= 160) document.body.style.fontSize = tamanhoAtual + "%";
+}
+function alternarAltoContraste() {
+    const corpo = document.body;
+    if (corpo.style.filter === "invert(1) contrast(1.2)") {
+        corpo.style.filter = "none"; corpo.style.backgroundColor = "";
+    } else {
+        corpo.style.filter = "invert(1) contrast(1.2)"; corpo.style.backgroundColor = "black";
+    }
+}
+</script>
 </body>
 </html>
