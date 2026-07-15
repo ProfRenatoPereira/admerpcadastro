@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <title>Requisições de Compras e Serviços</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+
+<div class="barra-acessibilidade">
+    <button class="btn-acessibilidade" onclick="alternarAltoContraste()">Acessibilidade 🌓 Alto Contraste</button>
+</div>
+
+<div class="container">
+    <h2>Módulo: Central de Requisições Industriais</h2>
+    
+    <!-- Formulário de Nova Requisição -->
+    <div style="background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); margin-bottom: 25px;">
+        <h3>➕ Abrir Nova Solicitação Interna</h3>
+        <form action="/salvar_requisicao" method="POST">
+            <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px;">
+                <div class="form-group">
+                    <label>Categoria da Solicitação:</label>
+                    <select name="equipamento_tipo" id="tipo_req" required onchange="ajustarPlaceholder()">
+                        <option value="Máquina / Ativo">Máquina / Ativo Fixo</option>
+                        <option value="Material / Insumo">Material / Insumo Produtivo</option>
+                        <option value="Prestação de Serviço">Prestação de Serviço / Manutenção</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Especificação Técnica Detalhada:</label>
+                    <input type="text" name="especificacao_desejada" id="especificacao_desejada" required placeholder="Ex: Torno CNC Mazak ou Pintura Industrial da Fachada">
+                </div>
+                <div class="form-group">
+                    <label>Quantidade / Escopo Estimado:</label>
+                    <input type="number" name="quantidade" min="1" required value="1">
+                </div>
+            </div>
+            <div style="margin-top: 15px;">
+                <button type="submit" class="btn btn-success">🚀 Transmitir Solicitação para Suprimentos</button>
+            </div>
+        </form>
+    </div>
+    <!-- Listagem de Controle das Requisições -->
+    <h3>Histórico de Solicitações e Status de Atendimento</h3>
+    <table class="data-table">
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>Categoria</th>
+                <th>Especificação / Escopo</th>
+                <th>Qtd / Volume</th>
+                <th>Status Atual</th>
+                <th>Orçamento Sugerido</th>
+                <th>Ações</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for req in requisicoes %}
+            <tr>
+                <td>#{{ req.id }}</td>
+                <td><strong>{{ req.equipamento_tipo }}</strong></td>
+                <td>{{ req.especificacao_desejada }}</td>
+                <td>{{ req.quantidade }}</td>
+                <td>
+                    <span class="badge" style="padding: 5px 10px; border-radius: 4px; background-color: {% if 'Pendente' in req.status %}#ffc107{% elif 'Cotado' in req.status %}#17a2b8{% else %}#28a745{% endif %}; color: white;">
+                        {{ req.status }}
+                    </span>
+                </td>
+                <td>{% if req.preco_cotado > 0 %}R$ {{ "%.2f"|format(req.preco_cotado) }}{% else %}Aguardando Cotação{% endif %}</td>
+                <td>
+                    {% if "Pendente" in req.status %}
+                    <form action="/cotar_internet/{{ req.id }}" method="POST" style="display:inline;">
+                        <button type="submit" class="btn btn-primary">🌐 Rodar Cotação Automatizada</button>
+                    </form>
+                    {% else %}
+                    <button class="btn btn-secondary" disabled>Cotação Concluída</button>
+                    {% endif %}
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+<script>
+    function ajustarPlaceholder() {
+        const tipo = document.getElementById('tipo_req').value;
+        const inputEsp = document.getElementById('especificacao_desejada');
+        if (tipo === "Prestação de Serviço") {
+            inputEsp.placeholder = "Ex: Calibração de Instrumentos ou Auditoria Interna";
+        } else if (tipo === "Material / Insumo") {
+            inputEsp.placeholder = "Ex: Chapa de Aço Inox 304 2mm";
+        } else {
+            inputEsp.placeholder = "Ex: Torno CNC Industrial Mazak";
+        }
+    }
+    function alternarAltoContraste() {
+        document.body.classList.toggle('dark-mode');
+    }
+</script>
+</body>
+</html>
