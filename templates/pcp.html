@@ -18,14 +18,12 @@
 <header class="cabecalho-corporativo">
     <div class="identidade-container">
         <div class="branding-flex">
-            <!-- Logo oficial do repositório -->
             <img src="{{ url_for('static', filename='logo.png') }}" alt="Logo TERADMAS" style="height: 65px; width: auto; object-fit: contain; border-radius: 4px;">
             <div class="texto-empresa">
                 <h1>TERCEIRO ADM ASSOCIADOS</h1>
                 <p>Projetos, Execução, Assessoria, Auditoria e Gerenciamento Operacional e de Custos</p>
             </div>
         </div>
-        <!-- Botão Hambúrguer para Celular -->
         <button class="menu-hamburguer" onclick="alternarMenuMobile()">☰</button>
     </div>
 
@@ -37,38 +35,39 @@
                 <ul class="sub-menu">
                     <li><a href="/estrutura">1. Investimentos Imobiliários</a></li>
                     <li><a href="/maquinas">2. Engenharia de Ativos (Máquinas)</a></li>
-                    <li><a href="/materiais">3. Almoxarifado (Materiais)</a></li>
+                    <li><a href="/requisicoes">📋 3. Central de Requisições</a></li>
+                    <li><a href="/compras">💰 4. Cockpit de Suprimentos</a></li>
+                    <li><a href="/materiais">5. Almoxarifado (Materiais)</a></li>
                 </ul>
             </li>
             <li class="item-menu">
                 <a href="#" class="link-principal">🛠️ Custos & Engenharia ▾</a>
                 <ul class="sub-menu">
-                    <li><a href="/engenharia">4. Engenharia de Produto (BOM)</a></li>
-                    <li><a href="/precificacao">5. Controladoria e Precificação</a></li>
+                    <li><a href="/engenharia">6. Engenharia de Produto (BOM)</a></li>
+                    <li><a href="/precificacao">7. Controladoria e Precificação</a></li>
                 </ul>
             </li>
             <li class="item-menu">
                 <a href="#" class="link-principal">💰 Operações Comerciais ▾</a>
                 <ul class="sub-menu">
-                    <li><a href="/vendas">6. Painel de Vendas Comerciais</a></li>
-                    <li><a href="/estoque">7. Inventário de Acabados</a></li>
+                    <li><a href="/vendas">8. Painel de Vendas Comerciais</a></li>
+                    <li><a href="/estoque">9. Inventário de Acabados</a></li>
                 </ul>
             </li>
             <li class="item-menu">
                 <a href="#" class="link-principal">🏭 Chão de Fábrica & ROI ▾</a>
                 <ul class="sub-menu">
-                    <li><a href="/pcp">8. Planilha de Processos (PCP)</a></li>
-                    <li><a href="/roi">9. Indicadores de Retorno (ROI)</a></li>
+                    <li><a href="/pcp">10. Planilha de Processos (PCP)</a></li>
+                    <li><a href="/roi">11. Indicadores de Retorno (ROI)</a></li>
                 </ul>
             </li>
         </ul>
     </nav>
 </header>
-
 <div class="container">
-    <h2>Página 9: Chão de Fábrica - Planilha Operacional de Roteiros (PCP)</h2>
+    <h2>Página 10: Chão de Fábrica - Planilha Operacional de Roteiros Encadeados (PCP)</h2>
     
-    <h3>Fila de Produção e Ordens de Serviço Ativas</h3>
+    <h3>Fila de Production e Ordens de Serviço Ativas</h3>
     <table class="data-table">
         <thead>
             <tr>
@@ -77,10 +76,10 @@
                 <th>Posto / Máquina</th>
                 <th>Produto / Lote</th>
                 <th>Entrada</th>
-                <th>Tempo do Lote (Min)</th>
+                <th>Tempo Lote</th>
                 <th>Saída (Fim)</th>
-                <th>Operador</th>
-                <th>Status</th>
+                <th>Custo Operação</th>
+                <th>Operador / Apontamento</th>
             </tr>
         </thead>
         <tbody>
@@ -90,15 +89,15 @@
                 <td><strong>{{ ord.numero_operacao }}</strong></td>
                 <td>⚙️ {{ ord.maquina_name }}</td>
                 <td><code>{{ ord.codigo_produto }}</code> - {{ ord.nome_produto }}</td>
-                <td><small>{{ ord.data_entrada }}</small></td>
+                <td style="color:#1a5276; font-weight:bold;"><small>{{ ord.data_entrada }}</small></td>
                 <td>{{ "%.1f"|format(ord.tempo_estimado_min) }} min</td>
-                <td>{{ ord.data_saida }}</td>
+                <td style="color:#78281f; font-weight:bold;"><small>{{ ord.data_saida }}</small></td>
+                <td style="color:#27ae60; font-weight:bold;">R$ {{ "%.2f"|format(ord.custo_operacao) }}</td>
                 <td><strong>{{ ord.operador_nome }}</strong></td>
                 <td>
-                    {% if ord.status == 'Na Fila' %}
-                    <!-- Correção efetuada: Ajuste de barras duplas para barra simples na URL da rota -->
+                    {% if ord.status != 'Finalizado' %}
                     <form action="/dar_baixa_op/{{ ord.id }}" method="POST" style="display: flex; gap: 5px; align-items: center;">
-                        <input type="text" name="operador_nome" required placeholder="Nome Operador" style="padding: 5px; font-size: 12px; width: 110px;">
+                        <input type="text" name="operador_nome" required placeholder="Nome Operador" style="padding: 5px; font-size: 11px; width: 100px; border: 1px solid #ccc; border-radius:3px;">
                         <button type="submit" class="btn btn-success" style="padding: 5px 8px; font-size: 11px;">🏁 Concluir</button>
                     </form>
                     {% else %}
@@ -110,7 +109,6 @@
         </tbody>
     </table>
 </div>
-
 <script>
     // Função para abrir e fechar o menu hambúrguer no celular
     function alternarMenuMobile() {
