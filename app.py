@@ -63,7 +63,7 @@ def init_db():
     ''')
 
     cursor.execute('CREATE TABLE IF NOT EXISTS materiais (id INTEGER PRIMARY KEY AUTOINCREMENT, codigo_material TEXT UNIQUE NOT NULL, nome_material TEXT NOT NULL, preco_unidade REAL NOT NULL, dimensoes TEXT, volume_disponivel REAL NOT NULL)')
-    cursor.execute('CREATE TABLE IF NOT EXISTS requisicoes_compras (id INTEGER PRIMARY KEY AUTOINCREMENT, equipamento_tipo TEXT NOT NULL, especificacao_desejada TEXT NOT NULL, quantidade INTEGER DEFAULT 1, status TEXT DEFAULT "Pendente em Cotação", preco_cotado REAL DEFAULT 0, potencia_cotada REAL DEFAULT 0, depreciacao_sugerida REAL DEFAULT 0, data_requisicao TIMESTAMP DEFAULT CURRENT_TIMESTAMP)')
+    cursor.execute('CREATE TABLE IF NOT EXISTS requisicoes_compras (id INTEGER PRIMARY KEY AUTOINCREMENT, equipamento_tipo TEXT NOT NULL, especificacao_desejada TEXT NOT NULL, quantity INTEGER DEFAULT 1, status TEXT DEFAULT "Pendente em Cotação", preco_cotado REAL DEFAULT 0, potencia_cotada REAL DEFAULT 0, depreciacao_sugerida REAL DEFAULT 0, data_requisicao TIMESTAMP DEFAULT CURRENT_TIMESTAMP)'.replace('quantity', 'quantidade'))
     cursor.execute('CREATE TABLE IF NOT EXISTS produtos (id INTEGER PRIMARY KEY AUTOINCREMENT, codigo_produto TEXT UNIQUE NOT NULL, nome_produto TEXT NOT NULL, custo_total_fabricacao REAL DEFAULT 0)')
     cursor.execute('CREATE TABLE IF NOT EXISTS estrutura_produto (id INTEGER PRIMARY KEY AUTOINCREMENT, produto_id INTEGER NOT NULL, maquina_id INTEGER, material_id INTEGER, tempo_processo_min REAL DEFAULT 0, quantidade_material REAL DEFAULT 0, FOREIGN KEY(produto_id) REFERENCES produtos(id))')
     cursor.execute('CREATE TABLE IF NOT EXISTS formacao_precos (id INTEGER PRIMARY KEY AUTOINCREMENT, produto_id INTEGER UNIQUE NOT NULL, imposto_municipal REAL DEFAULT 0, imposto_estadual REAL DEFAULT 0, imposto_federal REAL DEFAULT 0, margem_lucro REAL DEFAULT 0, preco_venda_final REAL DEFAULT 0, FOREIGN KEY(produto_id) REFERENCES produtos(id))')
@@ -196,6 +196,7 @@ def deletar_maquina(id):
 @app.route('/rh')
 def rh():
     conn = get_db_connection()
+    # Captura os postos de trabalho que possuem profissionais alocados no chão de fábrica
     colaboradores = conn.execute("SELECT * FROM maquinas WHERE operador_nome != 'Posto Vago - Aguardando MOD' AND operador_nome != ''").fetchall()
     conn.close()
     return render_template('rh.html', colaboradores=colaboradores)
@@ -433,7 +434,7 @@ def vincular_estrutura():
 
 @app.route('/deletar_item_estrutura/<int:id>', methods=['POST'])
 def deletar_item_estrutura(id):
-    """Restaura a função que deleta insumos da Engenharia/BOM (Correção do Erro 404)"""
+    """Restaura a função que deleta insumos da Engenharia/BOM"""
     conn = get_db_connection()
     conn.execute('DELETE FROM estrutura_produto WHERE id=?', (id,))
     conn.commit()
@@ -475,17 +476,16 @@ def estoque():
 
 @app.route('/lancar_venda', methods=['POST'])
 def lancar_venda():
-    prod_id = int(request.form['produto_id'])
-    qtd = int(request.form['quantidade'])
+    prod_id, qtd = int(request.form['produto_id']), int(request.form['quantidade'])
     conn = get_db_connection()
     est = conn.execute('SELECT quantity_disponivel FROM estoque_produtos WHERE produto_id = ?'.replace('quantity', 'quantidade'), (prod_id,)).fetchone()
     estoque_atual = est['quantidade_disponivel'] if est else 0
     if estoque_atual >= qtd:
         conn.execute('UPDATE estoque_produtos SET quantidade_disponivel = quantidade_disponivel - ? WHERE produto_id = ?', (qtd, prod_id))
-        conn.execute('INSERT INTO pedidos_vendas (produto_id, quantidade, desconto_percentual, observacoes) VALUES (?, ?, 0, "Pronta Entrega - Faturado")', (prod_id, qtd))
+        conn.execute('INSERT INTO pedidos_vendas (produto_id, quantity, desconto_percentual, observacoes) VALUES (?, ?, 0, "Pronta Entrega - Faturado")'.replace('quantity', 'quantidade'), (prod_id, qtd))
         conn.commit()
     else:
-        conn.execute('INSERT INTO pedidos_vendas (produto_id, quantidade, desconto_percentual, observacoes) VALUES (?, ?, 0, "SOB ENCOMENDA - Fila PCP")', (prod_id, qtd))
+        conn.execute('INSERT INTO pedidos_vendas (produto_id, quantity, desconto_percentual, observacoes) VALUES (?, ?, 0, "SOB ENCOMENDA - Fila PCP")'.replace('quantity', 'quantidade'), (prod_id, qtd))
         conn.commit()
     conn.close()
     return redirect(url_for('vendas'))
@@ -558,6 +558,18 @@ def dar_baixa_op(id):
     conn.close()
     return redirect(url_for('pcp'))
 
+@app.route('/imprimir_nf/<int:pedido_id>')
+def imprimir_nf(pedido_id):
+    """Calcula os impostos da DANFE Simulações e renderiza (Correção do Erro 404 da Imagem)"""
+    conn = get_db_connection()
+    ped = conn.execute('SELECT pv.*, p.codigo_produto, p.nome_produto, fp.preco_venda_final, fp.imposto_municipal, fp.imposto_estadual, fp.imposto_federal FROM pedidos_vendas pv JOIN produtos p ON pv.produto_id = p.id JOIN formacao_precos fp ON p.id = fp.produto_id WHERE pv.id = ?', (pedido_id,)).fetchone()
+    conn.close()
+    if not ped: return "Nota Fiscal não encontrada."
+    sub = ped['preco_venda_final'] * ped['quantidade']
+    v_desc = sub * (ped['desconto_percentual'] / 100)
+    liq = sub - v_desc
+    return render_template('nota_fiscal.html', p=ped, subtotal=sub, v_desconto=v_desc, total_liquido=liq, v_municipal=liq*(ped['imposto_municipal']/100), v_estadual=liq*0.18, v_federal=liq*(ped['imposto_federal']/100), total_impostos=(liq*(ped['imposto_municipal']/100)) + (liq*0.18) + (liq*(ped['imposto_federal']/100)))
+
 # --- CONTROLADORIA FINANCEIRA (CAIXA E ROI) ---
 @app.route('/financeiro')
 def financeiro():
@@ -571,7 +583,7 @@ def financeiro():
 
 @app.route('/pagar_dividendos', methods=['POST'])
 def pagar_dividendos():
-    flash('Distribuição de dividendos processada! Enviado para o Livro Razão Contábil.', 'success')
+    flash('Distribuição de dividendos processada! Lançamento enviado para o Livro Razão Contábil.', 'success')
     return redirect(url_for('financeiro'))
 
 @app.route('/roi')
