@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <title>DANFE Fictícia - NF-{{ p.id }}</title>
-     <link rel="icon" type="image/png" href="static/logo.png">
+    <link rel="icon" type="image/png" href="static/logo.png">
     <style>
         body { font-family: 'Courier New', Courier, monospace; margin: 20px; color: #000; font-size: 12px; }
         .nf-box { border: 2px solid #000; padding: 15px; max-width: 800px; margin: 0 auto; background:#fff; }
@@ -55,7 +55,6 @@
     </div>
 
     <!-- Navegação Responsiva com Menus Dropdown Unificados -->
-       <!-- COPIE ESTE MENU INTEGRAL E SUBSTITUA EM TODOS OS SEUS ARQUIVOS HTML -->
     <nav class="nav-container" id="menuNavegacao">
         <ul class="menu-cascata">
             <li class="item-menu">
@@ -93,7 +92,6 @@
             </li>
         </ul>
     </nav>
-
 </header>
     
     <button class="btn-print" onclick="window.print()">🖨️ Emitir via Impressora</button>
@@ -118,7 +116,6 @@
             <span><strong>DESCONTO APLICADO:</strong> {{ p.desconto_percentual }}% (-R$ {{ "%.2f"|format(v_desconto) }})</span>
             <span><strong>VALOR LÍQUIDO DA NOTA:</strong> R$ {{ "%.2f"|format(total_liquido) }}</span>
         </div>
-
         <hr style="border: 1px solid #000;">
         
         <h3>DEMONSTRATIVO DE IMPOSTOS RETIDOS</h3>
@@ -127,7 +124,7 @@
             <span>VALOR RETIDO ISS: R$ {{ "%.2f"|format(v_municipal) }}</span>
         </div>
         <div class="row">
-            <span>ALIQUOTA ICMS (ESTADUAL): {{ p.imposto_all }}18.0%</span>
+            <span>ALIQUOTA ICMS (ESTADUAL): 18.0%</span>
             <span>VALOR RETIDO ICMS: R$ {{ "%.2f"|format(v_estadual) }}</span>
         </div>
         <div class="row">
@@ -145,7 +142,7 @@
         </div>
     </div>
 
-   <script>
+<script>
     // Função para abrir e fechar o menu hambúrguer no celular
     function alternarMenuMobile() {
         const menu = document.getElementById('menuNavegacao');
