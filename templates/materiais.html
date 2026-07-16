@@ -7,16 +7,18 @@
 </head>
 <body>
 
+<!-- Barra de Acessibilidade Superior Oficial -->
 <div class="barra-acessibilidade">
     <button class="btn-acessibilidade" onclick="alternarAltoContraste()">Acessibilidade 🌓 Alto Contraste</button>
     <button class="btn-acessibilidade" onclick="mudarFonte(1)">A+</button>
     <button class="btn-acessibilidade" onclick="mudarFonte(-1)">A-</button>
 </div>
 
+<!-- Cabeçalho Principal Terceiro ADM Associados -->
 <header class="cabecalho-corporativo">
     <div class="identidade-container">
         <div class="branding-flex">
-            <img src="{{ url_for('static', filename='logo.png') }}" alt="Logo" style="height: 65px; width: auto; object-fit: contain; border-radius: 4px;">
+            <img src="{{ url_for('static', filename='logo.png') }}" alt="Logo TERADMAS" style="height: 65px; width: auto; object-fit: contain; border-radius: 4px;">
             <div class="texto-empresa">
                 <h1>TERCEIRO ADM ASSOCIADOS</h1>
                 <p>Módulo 7: Almoxarifado Central, Logística de Insumos e Valor de Inventário</p>
@@ -25,6 +27,7 @@
         <button class="menu-hamburguer" onclick="alternarMenuMobile()">☰</button>
     </div>
 
+    <!-- Navegação Responsiva com Menus Dropdown Unificados de 13 Itens Totalmente Corrigidos -->
     <nav class="nav-container" id="menuNavegacao">
         <ul class="menu-cascata">
             <li class="item-menu">
@@ -44,6 +47,20 @@
                 <ul class="sub-menu">
                     <li><a href="/engenharia">8. Engenharia de Produto (BOM)</a></li>
                     <li><a href="/precificacao">9. Controladoria e Precificação</a></li>
+                </ul>
+            </li>
+            <li class="item-menu">
+                <a href="#" class="link-principal">💰 Operações Comerciais ▾</a>
+                <ul class="sub-menu">
+                    <li><a href="/vendas">10. Painel de Vendas Comerciais</a></li>
+                    <li><a href="/estoque">11. Inventário de Acabados</a></li>
+                </ul>
+            </li>
+            <li class="item-menu">
+                <a href="#" class="link-principal">🏭 Chão de Fábrica & ROI ▾</a>
+                <ul class="sub-menu">
+                    <li><a href="/pcp">12. Planilha de Processos (PCP)</a></li>
+                    <li><a href="/roi">13. Indicadores de Retorno (ROI)</a></li>
                 </ul>
             </li>
         </ul>
