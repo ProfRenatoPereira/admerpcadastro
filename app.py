@@ -21,7 +21,7 @@ def init_db():
 
     cursor.execute('CREATE TABLE IF NOT EXISTS usuarios (id INTEGER PRIMARY KEY AUTOINCREMENT, usuario TEXT UNIQUE NOT NULL, senha TEXT NOT NULL, aprovado INTEGER DEFAULT 0)')
 
-    # Tabela imobiliaria (Página 2)
+    # Tabela imobiliaria Atualizada com Orçamento de Capital Inicial (Página 2)
     cursor.execute('''
         CREATE TABLE IF NOT EXISTS investimentos_imobiliarios (
             id INTEGER PRIMARY KEY AUTOINCREMENT, 
@@ -32,7 +32,8 @@ def init_db():
             taxa_selic REAL NOT NULL, 
             valor_imovel_estimado REAL NOT NULL,
             aluguel_regional REAL NOT NULL,
-            perc_acionistas REAL NOT NULL
+            perc_acionistas REAL NOT NULL,
+            capital_inicial_negocio REAL DEFAULT 0.0
         )
     ''')
 
@@ -118,13 +119,13 @@ def salvar_estrutura():
     conn = get_db_connection()
     conn.execute('''
         INSERT INTO investimentos_imobiliarios 
-        (turma_nome, city_regiao, bairro_imovel, area_imovel, taxa_selic, valor_imovel_estimado, aluguel_regional, perc_acionistas) 
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-    '''.replace('city_regiao', 'cidade_regiao'), (
+        (turma_nome, cidade_regiao, bairro_imovel, area_imovel, taxa_selic, valor_imovel_estimado, aluguel_regional, perc_acionistas, capital_inicial_negocio) 
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+    ''', (
         request.form.get('turma_nome', 'Turma Geral'), request.form.get('cidade_regiao', 'Curitiba'), request.form.get('bairro_imovel', 'Centro'),
         float(request.form.get('area_imovel') or 0), float(request.form.get('taxa_selic') or 11.39),
         float(request.form.get('valor_imovel_estimado') or 0), float(request.form.get('aluguel_regional') or 0),
-        float(request.form.get('perc_acionistas') or 0)
+        float(request.form.get('perc_acionistas') or 0), float(request.form.get('capital_inicial_negocio') or 0)
     ))
     conn.commit()
     conn.close()
@@ -135,13 +136,13 @@ def alterar_estrutura(id):
     conn = get_db_connection()
     conn.execute('''
         UPDATE investimentos_imobiliarios 
-        SET turma_nome=?, cidade_regiao=?, bairro_imovel=?, area_imovel=?, taxa_selic=?, valor_imovel_estimado=?, aluguel_regional=?, perc_acionistas=? 
+        SET turma_nome=?, cidade_regiao=?, bairro_imovel=?, area_imovel=?, taxa_selic=?, valor_imovel_estimado=?, aluguel_regional=?, perc_acionistas=?, capital_inicial_negocio=? 
         WHERE id=?
     ''', (
         request.form.get('turma_nome', 'Turma Geral'), request.form.get('cidade_regiao', 'Curitiba'), request.form.get('bairro_imovel', 'Centro'),
         float(request.form.get('area_imovel') or 0), float(request.form.get('taxa_selic') or 11.39),
         float(request.form.get('valor_imovel_estimado') or 0), float(request.form.get('aluguel_regional') or 0),
-        float(request.form.get('perc_acionistas') or 0), id
+        float(request.form.get('perc_acionistas') or 0), float(request.form.get('capital_inicial_negocio') or 0), id
     ))
     conn.commit()
     conn.close()
@@ -468,7 +469,7 @@ def precificacao():
 @app.route('/salvar_preco', methods=['POST'])
 def salvar_preco():
     conn = get_db_connection()
-    conn.execute('INSERT OR REPLACE INTO formacao_precos (produto_id, imposto_municipal, imposto_estadual, imposto_federal, margem_lucro, preco_venda_final) VALUES (?, ?, ?, ?, ?, ?)', (int(request.form.get('produto_id') or 0), float(request.form.get('imposto_municipal') or 0), float(request.form.get('imposto_estadual') or 0), float(request.form.get('imposto_federal') or 0), float(request.form.get('margem_lucro') or 0), float(request.form.get('preco_venda_final') or 0)))
+    conn.execute('INSERT OR REPLACE INTO formacao_precos (produto_id, imposto_municipal, imposto_estadual, imposto_federal, margem_lucro, preco_venda_final) VALUES (?, ?, ?, ?, ?, ?)', (int(request.form.get('produto_id') or 0), float(request.form.get('imposto_municipal') or 0), float(request.form.get('imposto_estadual'] or 0), float(request.form.get('imposto_federal') or 0), float(request.form.get('margem_lucro') or 0), float(request.form.get('preco_venda_final') or 0)))
     conn.commit()
     conn.close()
     return redirect(url_for('precificacao'))
@@ -497,7 +498,7 @@ def lancar_venda():
     est = conn.execute('SELECT quantidade_disponivel FROM estoque_produtos WHERE produto_id = ?', (prod_id,)).fetchone()
     estoque_atual = est['quantidade_disponivel'] if est else 0
     if estoque_atual >= qtd:
-        conn.execute('UPDATE estoque_produtos SET quantidade_disponivel = quantity_disponivel - ? WHERE produto_id = ?'.replace('quantity', 'quantidade'), (qtd, prod_id))
+        conn.execute('UPDATE estoque_produtos SET quantidade_disponivel = quantidade_disponivel - ? WHERE produto_id = ?', (qtd, prod_id))
         conn.execute('INSERT INTO pedidos_vendas (produto_id, quantidade, desconto_percentual, observacoes) VALUES (?, ?, 0, "Pronta Entrega - Faturado")', (prod_id, qtd))
     else:
         conn.execute('INSERT INTO pedidos_vendas (produto_id, quantidade, desconto_percentual, observacoes) VALUES (?, ?, 0, "SOB ENCOMENDA - Fila PCP")', (prod_id, qtd))
@@ -558,8 +559,8 @@ def abastecer_estoque_pcp():
         flash('Bloqueio de Qualidade: O Almoxarifado não pode receber este lote! Existem operações pendentes no PCP.', 'danger')
         return redirect(url_for('estoque'))
     est = conn.execute('SELECT * FROM estoque_produtos WHERE produto_id = ?', (prod_id,)).fetchone()
-    if not est: conn.execute('INSERT INTO estoque_produtos (produto_id, quantidade_disponivel) VALUES (?, ?)', (prod_id, qtd))
-    else: conn.execute('UPDATE estoque_produtos SET quantidade_disponivel = quantidade_disponivel + ? WHERE produto_id = ?', (qtd, prod_id))
+    if not est: conn.execute('INSERT INTO estoque_produtos (produto_id, quantity_disponivel) VALUES (?, ?)'.replace('quantity', 'quantidade'), (prod_id, qtd))
+    else: conn.execute('UPDATE estoque_produtos SET quantity_disponivel = quantity_disponivel + ? WHERE produto_id = ?'.replace('quantity', 'quantidade'), (qtd, prod_id))
     conn.execute("UPDATE ordens_processo SET status = 'Finalizado e Armazenado' WHERE pedido_id = ?", (pedido_id,))
     conn.commit()
     conn.close()
