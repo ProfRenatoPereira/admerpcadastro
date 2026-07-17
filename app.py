@@ -605,12 +605,19 @@ def pagar_dividendos():
 @app.route('/roi')
 def roi():
     conn = get_db_connection()
+    
+    # CORREÇÃO AQUI: Adicionado o .fetchone() no final da consulta
     v_dados = conn.execute('SELECT COALESCE(SUM(fp.preco_venda_final * pv.quantidade), 0) AS receita_bruta, COALESCE(SUM(pv.quantidade), 0) AS total_pecas FROM pedidos_vendas pv JOIN formacao_precos fp ON pv.produto_id = fp.produto_id').fetchone()
+    
     invs = conn.execute('SELECT COALESCE(SUM(valor_imovel_estimado), 0) AS capital_imobilizado FROM investimentos_imobiliarios').fetchone()
     conn.close()
+    
     rec, pecas, cap = v_dados['receita_bruta'], v_dados['total_pecas'], invs['capital_imobilizado']
+    
     roi_calculado = (rec / cap) * 100 if cap > 0 else 0.0
+    
     return render_template('roi.html', receita=rec, total_pecas=pecas, capital=cap, roi=roi_calculado)
+
 
 if __name__ == '__main__':
     app.run(debug=True)
