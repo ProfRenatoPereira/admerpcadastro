@@ -2,12 +2,54 @@
 <html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Inventário de Acabados e Controle de Estoque</title>
-     <link rel="icon" type="image/png" href="static/logo.png">
+    <link rel="icon" type="image/png" href="static/logo.png">
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <style>
+        /* CSS de Segurança para Alto Contraste Nativo nas Tabelas e Alertas */
+        .alto-contraste body {
+            background-color: #000000 !important;
+            color: #ffffff !important;
+        }
+        .alto-contraste .data-table th {
+            background-color: #1e1e1e !important;
+            color: #ffffff !important;
+            border: 1px solid #ffffff !important;
+        }
+        .alto-contraste .data-table td {
+            background-color: #000000 !important;
+            color: #ffffff !important;
+            border: 1px solid #ffffff !important;
+        }
+        .alto-contraste code {
+            background-color: #2a2a2a !important;
+            color: #00ff00 !important;
+            padding: 2px 6px;
+            border-radius: 4px;
+        }
+        .alto-contraste .alert {
+            background-color: #111111 !important;
+            color: #ffffff !important;
+            border: 2px solid #ffffff !important;
+        }
+        
+        /* Contêiner para rolagem de tabelas em dispositivos móveis */
+        .tabela-responsiva {
+            overflow-x: auto;
+            width: 100%;
+            margin-bottom: 30px;
+            -webkit-overflow-scrolling: touch;
+        }
+        
+        .btn-acao-tabela {
+            font-size: 14px; 
+            padding: 6px 12px;
+            cursor: pointer;
+        }
+    </style>
 </head>
 <body>
-
     
 <!-- Barra de Acessibilidade Superior Oficial -->
 <div class="barra-acessibilidade">
@@ -30,7 +72,6 @@
     </div>
 
     <!-- Navegação Responsiva com Menus Dropdown Unificados -->
-      <!-- COPIE ESTE MENU INTEGRAL E SUBSTITUA EM TODOS OS SEUS ARQUIVOS HTML -->
     <nav class="nav-container" id="menuNavegacao">
         <ul class="menu-cascata">
             <li class="item-menu">
@@ -68,10 +109,8 @@
             </li>
         </ul>
     </nav>
-
 </header>
 
-    
 <div class="container">
     <h2>Página 9: Almoxarifado Central - Inventário de Produtos Acabados</h2>
     <p>O recebimento de novos lotes depende obrigatoriamente da finalização das ordens no chão de fábrica (PCP).</p>
@@ -87,75 +126,79 @@
       {% endif %}
     {% endwith %}
 
-    <!-- Tabela 1: Saldos Atuais no Inventário -->
+    <!-- Tabela 1: Saldos Atuais no Inventário Interno Responsivo -->
     <h3>📦 Saldo Atual em Almoxarifado</h3>
-    <table class="data-table" style="margin-bottom: 30px;">
-        <thead>
-            <tr>
-                <th>Código do Produto</th>
-                <th>Nome do Item Comercial</th>
-                <th>Quantidade Disponível</th>
-                <th>Status Logístico</th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for item in estoque_itens %}
-            <tr>
-                <td><code>{{ item.codigo_produto }}</code></td>
-                <td><strong>{{ item.nome_produto }}</strong></td>
-                <td><span style="font-size: 15px; font-weight: bold; color: #2b5797;">{{ "%.0f"|format(item.quantidade_disponivel) }}</span> un</td>
-                <td>
-                    {% if item.quantidade_disponivel <= 0 %}
-                        <span style="color:#721c24; font-weight:bold; background:#f8d7da; padding:3px 6px; border-radius:3px;">🚨 Estoque Zerado</span>
-                    {% elif item.quantidade_disponivel <= 5 %}
-                        <span style="color:#856404; font-weight:bold; background:#fff3cd; padding:3px 6px; border-radius:3px;">⚠️ Abastecimento Crítico</span>
-                    {% else %}
-                        <span style="color:#155724; font-weight:bold; background:#d4edda; padding:3px 6px; border-radius:3px;">✅ Nível Seguro</span>
-                    {% endif %}
-                </td>
-            </tr>
-            {% endfor %}
-        </tbody>
-    </table>
-
-    <!-- Tabela 2: Demandas Comerciais Amarradas à Produção -->
+    <div class="tabela-responsiva">
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th>Código do Produto</th>
+                    <th>Nome do Item Comercial</th>
+                    <th>Quantidade Disponível</th>
+                    <th>Status Logístico</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for item in estoque_itens %}
+                <tr>
+                    <td><code>{{ item.codigo_produto }}</code></td>
+                    <td><strong>{{ item.nome_produto }}</strong></td>
+                    <td><span style="font-size: 15px; font-weight: bold; color: #2b5797;">{{ "%.0f"|format(item.quantidade_disponivel) }}</span> un</td>
+                    <td>
+                        {% if item.quantidade_disponivel <= 0 %}
+                            <span style="color:#721c24; font-weight:bold; background:#f8d7da; padding:3px 6px; border-radius:3px; font-size: 14px;">🚨 Estoque Zerado</span>
+                        {% elif item.quantidade_disponivel <= 5 %}
+                            <span style="color:#856404; font-weight:bold; background:#fff3cd; padding:3px 6px; border-radius:3px; font-size: 14px;">⚠️ Abastecimento Crítico</span>
+                        {% else %}
+                            <span style="color:#155724; font-weight:bold; background:#d4edda; padding:3px 6px; border-radius:3px; font-size: 14px;">✅ Nível Seguro</span>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    <!-- Tabela 2: Demandas Comerciais Amarradas à Produção Responsiva -->
     <h3>📋 Demandas de Vendas Aguardando Abastecimento / PCP</h3>
-    <table class="data-table">
-        <thead>
-            <tr>
-                <th>ID Pedido</th>
-                <th>Produto Requisitado</th>
-                <th>Quantidade Solicitada</th>
-                <th>Rastreabilidade / Engenharia</th>
-                <th>Controle de Entrada de Almoxarifado</th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for ped in pedidos %}
-            <tr>
-                <td><code>OS-00{{ ped.id }}</code></td>
-                <td><strong>{{ ped.nome_produto }}</strong></td>
-                <td>{{ ped.quantidade }} unidades</td>
-                <td>
-                    <!-- Gatilho para abrir a árvore de processos no PCP -->
-                    <form action="/solicitar_producao_pcp/{{ ped.id }}" method="POST" style="display:inline;">
-                        <button type="submit" class="btn btn-primary" style="font-size: 12px; padding: 5px 10px;">🏭 Emitir Ordem ao PCP</button>
-                    </form>
-                </td>
-                <td>
-                    <!-- Tenta receber o lote do PCP. O back-end bloqueia se houver OPs pendentes -->
-                    <form action="/abastecer_estoque_pcp" method="POST" style="display:inline; display: flex; gap: 5px; align-items: center;">
-                        <input type="hidden" name="produto_id" value="{{ ped.produto_id }}">
-                        <input type="hidden" name="pedido_id" value="{{ ped.id }}">
-                        <input type="hidden" name="quantidade_abastecer" value="{{ ped.quantidade }}">
-                        <button type="submit" class="btn btn-success" style="font-size: 12px; padding: 5px 10px;">📥 Receber Lote Concluído</button>
-                    </form>
-                </td>
-            </tr>
-            {% endfor %}
-        </tbody>
-    </table>
+    <div class="tabela-responsiva">
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th>ID Pedido</th>
+                    <th>Produto Requisitado</th>
+                    <th>Quantidade Solicitada</th>
+                    <th>Rastreabilidade / Engenharia</th>
+                    <th>Controle de Entrada de Almoxarifado</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for ped in pedidos %}
+                <tr>
+                    <td><code>OS-00{{ ped.id }}</code></td>
+                    <td><strong>{{ ped.nome_produto }}</strong></td>
+                    <td>{{ ped.quantidade }} unidades</td>
+                    <td>
+                        <!-- Gatilho para abrir a árvore de processos no PCP -->
+                        <form action="/solicitar_producao_pcp/{{ ped.id }}" method="POST" style="display:inline;">
+                            <button type="submit" class="btn btn-primary btn-acao-tabela" style="font-size: 12px; padding: 5px 10px; cursor: pointer;">🏭 Emitir Ordem ao PCP</button>
+                        </form>
+                    </td>
+                    <td>
+                        <!-- Tenta receber o lote do PCP. O back-end bloqueia se houver OPs pendentes -->
+                        <form action="/abastecer_estoque_pcp" method="POST" style="display:inline; display: flex; gap: 5px; align-items: center;">
+                            <input type="hidden" name="produto_id" value="{{ ped.produto_id }}">
+                            <input type="hidden" name="pedido_id" value="{{ ped.id }}">
+                            <input type="hidden" name="quantidade_abastecer" value="{{ ped.quantidade }}">
+                            <button type="submit" class="btn btn-success btn-acao-tabela" style="font-size: 12px; padding: 5px 10px; cursor: pointer;">📥 Receber Lote Concluído</button>
+                        </form>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
 </div>
+
 <script>
     // Função para abrir e fechar o menu hambúrguer no celular
     function alternarMenuMobile() {
@@ -172,18 +215,11 @@
         }
     }
 
-    // Controle do modo de alto contraste
+    // Controle nativo por classes do modo de alto contraste sem quebrar o layout
     function alternarAltoContraste() {
         const corpo = document.body;
-        if (corpo.style.filter === "invert(1) contrast(1.2)") {
-            corpo.style.filter = "none";
-            corpo.style.backgroundColor = "";
-        } else {
-            corpo.style.filter = "invert(1) contrast(1.2)";
-            corpo.style.backgroundColor = "black";
-        }
+        corpo.classList.toggle('alto-contraste');
     }
 </script>
-
 </body>
 </html>
