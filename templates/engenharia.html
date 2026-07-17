@@ -2,9 +2,56 @@
 <html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Engenharia de Produto - BOM</title>
     <link rel="icon" type="image/png" href="static/logo.png">
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <style>
+        /* CSS de Segurança para Alto Contraste Nativo nos Cards e Formulários */
+        .alto-contraste body {
+            background-color: #000000 !important;
+            color: #ffffff !important;
+        }
+        .alto-contraste .card-engenharia {
+            background-color: #121212 !important;
+            border: 2px solid #ffffff !important;
+            color: #ffffff !important;
+        }
+        .alto-contraste .card-engenharia h3, .alto-contraste .card-engenharia label {
+            color: #ffffff !important;
+        }
+        .alto-contraste input, .alto-contraste select {
+            background-color: #1e1e1e !important;
+            color: #ffffff !important;
+            border: 2px solid #ffffff !important;
+        }
+        .alto-contraste code {
+            background-color: #2a2a2a !important;
+            color: #00ff00 !important;
+            padding: 2px 6px;
+            border-radius: 4px;
+        }
+        
+        /* Layout responsivo flexível (Celular ao Telão) */
+        .grid-layout-engenharia {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+            gap: 20px;
+        }
+        .grid-formulario-interno {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+        }
+        .form-group input, .form-group select {
+            width: 100%;
+            padding: 10px;
+            border-radius: 4px;
+            border: 1px solid #bdc3c7;
+            box-sizing: border-box;
+            font-size: 16px;
+        }
+    </style>
 </head>
 <body>
     
@@ -29,7 +76,6 @@
     </div>
 
     <!-- Navegação Responsiva com Menus Dropdown Unificados -->
-       <!-- COPIE ESTE MENU INTEGRAL E SUBSTITUA EM TODOS OS SEUS ARQUIVOS HTML -->
     <nav class="nav-container" id="menuNavegacao">
         <ul class="menu-cascata">
             <li class="item-menu">
@@ -69,77 +115,79 @@
     </nav>
 </header>
 
-
+<div class="container">
+    <h2>Página 5: Engenharia de Produto (Estrutura e Roteiros - BOM)</h2>
     
-    <div class="container">
-        <h2>Página 5: Engenharia de Produto (Estrutura e Roteiros - BOM)</h2>
-        
-        <div style="display: grid; grid-template-columns: 1fr 2fr; gap: 20px;">
-            <!-- Bloco Esquerdo: Criar o Produto (Master) -->
-            <div style="background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.1);">
-                <h3>1. Registrar Novo Produto</h3>
-                <form action="/salvar_produto" method="POST">
-                    <div class="form-group">
-                        <label>Código do Produto:</label>
-                        <input type="text" name="codigo_produto" required placeholder="Ex: PROD-EIXO-01">
-                    </div>
-                    <div class="form-group">
-                        <label>Nome Comercial:</label>
-                        <input type="text" name="nome_produto" required placeholder="Ex: Eixo de Transmissão Zincado">
-                    </div>
-                    <button type="submit" class="btn btn-success" style="width: 100%;">Criar Produto Base</button>
-                </form>
-            </div>
-
-            <!-- Bloco Direito: Vincular Roteiro e Componentes -->
-            <div style="background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.1);">
-                <h3>2. Compor Árvore e Roteiro de Fabricação</h3>
-                <form action="/vincular_estrutura" method="POST">
-                    <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 15px;">
-                        <div class="form-group">
-                            <label>Selecionar o Produto Base:</label>
-                            <select name="produto_id" required style="width:100%; padding:10px; border-radius:4px;">
-                                <option value="">-- Escolha o Produto --</option>
-                                {% for prod in produtos %}
-                                <option value="{{ prod.id }}">{{ prod.codigo_produto }} - {{ prod.nome_produto }}</option>
-                                {% endfor %}
-                            </select>
-                        </div>
-                        <div class="form-group">
-                            <label>Adicionar Operação / Máquina:</label>
-                            <select name="maquina_id" style="width:100%; padding:10px; border-radius:4px;">
-                                <option value="">-- Nenhuma (Apenas Material) --</option>
-                                {% for maq in maquinas %}
-                                <option value="{{ maq.id }}">{{ maq.nome_equipamento }} (R$ {{ maq.custo_minuto_maquina }}/min)</option>
-                                {% endfor %}
-                            </select>
-                        </div>
-                        <div class="form-group">
-                            <label>Tempo Estimado da Operação (Minutos):</label>
-                            <input type="number" step="0.01" name="tempo_processo_min" value="0">
-                        </div>
-                        <div class="form-group">
-                            <label>Adicionar Material / Insumo:</label>
-                            <select name="material_id" style="width:100%; padding:10px; border-radius:4px;">
-                                <option value="">-- Nenhum (Apenas Operação) --</option>
-                                {% for mat in materiais %}
-                                <option value="{{ mat.id }}">{{ mat.nome_material }} (R$ {{ mat.preco_unidade }}/un)</option>
-                                {% endfor %}
-                            </select>
-                        </div>
-                        <div class="form-group">
-                            <label>Qtd / Peso Gasto de Material:</label>
-                            <input type="number" step="0.01" name="quantidade_material" value="0">
-                        </div>
-                    </div>
-                    <div style="margin-top: 15px;">
-                        <button type="submit" class="btn btn-primary" style="width: 100%;">⚙️ Inserir Elemento na Ficha Técnica</button>
-                    </div>
-                </form>
-            </div>
+    <!-- Grid Layout Responsivo Adaptado -->
+    <div class="grid-layout-engenharia">
+        <!-- Bloco Esquerdo: Criar o Produto (Master) -->
+        <div class="card-engenharia" style="background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.1);">
+            <h3>1. Registrar Novo Produto</h3>
+            <form action="/salvar_produto" method="POST">
+                <div class="form-group" style="margin-bottom: 12px;">
+                    <label for="codigo_produto">Código do Produto:</label>
+                    <input type="text" id="codigo_produto" name="codigo_produto" required placeholder="Ex: PROD-EIXO-01">
+                </div>
+                <div class="form-group" style="margin-bottom: 12px;">
+                    <label for="nome_produto">Nome Comercial:</label>
+                    <input type="text" id="nome_produto" name="nome_produto" required placeholder="Ex: Eixo de Transmissão Zincado">
+                </div>
+                <button type="submit" class="btn btn-success" style="width: 100%; cursor: pointer;">Criar Produto Base</button>
+            </form>
         </div>
-        <!-- Listagem das Árvores de Engenharia Atuais -->
-        <h3>Estruturas de Engenharia Ativas (Roteiros)</h3>
+
+        <!-- Bloco Direito: Vincular Roteiro e Componentes -->
+        <div class="card-engenharia" style="background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.1);">
+            <h3>2. Compor Árvore e Roteiro de Fabricação</h3>
+            <form action="/vincular_estrutura" method="POST">
+                <div class="grid-formulario-interno">
+                    <div class="form-group">
+                        <label for="produto_id">Selecionar o Produto Base:</label>
+                        <select id="produto_id" name="produto_id" required>
+                            <option value="">-- Escolha o Produto --</option>
+                            {% for prod in produtos %}
+                            <option value="{{ prod.id }}">{{ prod.codigo_produto }} - {{ prod.nome_produto }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="maquina_id">Adicionar Operação / Máquina:</label>
+                        <select id="maquina_id" name="maquina_id">
+                            <option value="">-- Nenhuma (Apenas Material) --</option>
+                            {% for maq in maquinas %}
+                            <option value="{{ maq.id }}">{{ maq.nome_equipamento }} (R$ {{ "%.4f"|format(maq.custo_minuto_maquina) }}/min)</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="tempo_processo_min">Tempo da Operação (Minutos):</label>
+                        <input type="number" id="tempo_processo_min" step="0.01" name="tempo_processo_min" value="0">
+                    </div>
+                    <div class="form-group">
+                        <label for="material_id">Adicionar Material / Insumo:</label>
+                        <select id="material_id" name="material_id">
+                            <option value="">-- Nenhum (Apenas Operação) --</option>
+                            {% for mat in materiais %}
+                            <option value="{{ mat.id }}">{{ mat.nome_material }} (R$ {{ "%.2f"|format(mat.preco_unidade) }}/un)</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="quantidade_material">Qtd / Peso Gasto de Material:</label>
+                        <input type="number" id="quantidade_material" step="0.01" name="quantidade_material" value="0">
+                    </div>
+                </div>
+                <div style="margin-top: 15px;">
+                    <button type="submit" class="btn btn-primary" style="width: 100%; cursor: pointer;">⚙️ Inserir Elemento na Ficha Técnica</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Listagem das Árvores de Engenharia Atuais -->
+    <h3>Estruturas de Engenharia Ativas (Roteiros)</h3>
+    <!-- Contêiner de rolagem para garantir a responsividade em celulares -->
+    <div style="overflow-x: auto; width: 100%; margin-bottom: 20px;">
         <table class="data-table">
             <thead>
                 <tr>
@@ -171,7 +219,7 @@
                     </td>
                     <td>
                         <form action="/deletar_item_estrutura/{{ comp.id }}" method="POST" onsubmit="return confirm('Remover este item da engenharia do produto?');">
-                            <button type="submit" class="btn btn-danger" style="padding: 5px 10px;">❌ Remover</button>
+                            <button type="submit" class="btn btn-danger" style="padding: 5px 10px; cursor: pointer;">❌ Remover</button>
                         </form>
                     </td>
                 </tr>
@@ -179,9 +227,9 @@
             </tbody>
         </table>
     </div>
+</div>
 
-
-    <script>
+<script>
     // Função para abrir e fechar o menu hambúrguer no celular
     function alternarMenuMobile() {
         const menu = document.getElementById('menuNavegacao');
@@ -197,18 +245,11 @@
         }
     }
 
-    // Controle do modo de alto contraste
+    // Controle nativo por classes do modo de alto contraste corrigido
     function alternarAltoContraste() {
         const corpo = document.body;
-        if (corpo.style.filter === "invert(1) contrast(1.2)") {
-            corpo.style.filter = "none";
-            corpo.style.backgroundColor = "";
-        } else {
-            corpo.style.filter = "invert(1) contrast(1.2)";
-            corpo.style.backgroundColor = "black";
-        }
+        corpo.classList.toggle('alto-contraste');
     }
 </script>
-
 </body>
 </html>
