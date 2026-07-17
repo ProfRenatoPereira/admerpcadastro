@@ -2,10 +2,12 @@
 <html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
-    <title>Almoxarifado Central - Cadastro de Materiais</title>
+    <title>Cadastro de Materiais e Insumos</title>
+     <link rel="icon" type="image/png" href="static/logo.png">
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 </head>
 <body>
+
 
 <!-- Barra de Acessibilidade Superior Oficial -->
 <div class="barra-acessibilidade">
@@ -21,13 +23,14 @@
             <img src="{{ url_for('static', filename='logo.png') }}" alt="Logo TERADMAS" style="height: 65px; width: auto; object-fit: contain; border-radius: 4px;">
             <div class="texto-empresa">
                 <h1>TERCEIRO ADM ASSOCIADOS</h1>
-                <p>Módulo 7: Almoxarifado Central, Logística de Insumos e Valor de Inventário</p>
+                <p>Módulo 4: Gestão do Fluxo Financeiro, Caixa e Demonstrativo de Resultados</p>
             </div>
         </div>
         <button class="menu-hamburguer" onclick="alternarMenuMobile()">☰</button>
     </div>
 
-    <!-- Navegação Responsiva com Menus Dropdown Unificados de 13 Itens Totalmente Corrigidos -->
+    <!-- Navegação Responsiva com Menus Dropdown Unificados -->
+       <!-- COPIE ESTE MENU INTEGRAL E SUBSTITUA EM TODOS OS SEUS ARQUIVOS HTML -->
     <nav class="nav-container" id="menuNavegacao">
         <ul class="menu-cascata">
             <li class="item-menu">
@@ -39,7 +42,7 @@
                     <li><a href="/financeiro">💰 4. Fluxo Financeiro</a></li>
                     <li><a href="/requisicoes">📋 5. Central de Requisições</a></li>
                     <li><a href="/compras">🛒 6. Cockpit de Suprimentos</a></li>
-                    <li><a href="/materiais" style="background: #eef9ff; color: #007bff; font-weight: bold;">7. Almoxarifado (Materiais)</a></li>
+                    <li><a href="/materiais">7. Almoxarifado (Materiais)</a></li>
                 </ul>
             </li>
             <li class="item-menu">
@@ -65,70 +68,156 @@
             </li>
         </ul>
     </nav>
+
 </header>
 
-<div class="container">
-    <h2>Página 7: Almoxarifado Central - Cadastro de Matérias-Primas e Componentes</h2>
-    <p>Os itens cadastrados nesta tela compõem a árvore estrutural do produto comercial (*Bill of Materials*).</p>
 
-    <div style="background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); margin-bottom: 25px; border-top: 4px solid #2b5797;">
-        <h3>📦 Entrada e Registro de Novo SKU no Inventário</h3>
-        <form action="/salvar_material" method="POST">
-            <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 15px;">
-                <div class="form-group"><label>Código SKU Material:</label><input type="text" name="codigo_material" required class="form-control" placeholder="Ex: MAT-ACO-1020"></div>
-                <div class="form-group"><label>Nome do Insumo Técnico:</label><input type="text" name="nome_material" required class="form-control" placeholder="Ex: Tarugo Aço Cilíndrico"></div>
-                <div class="form-group"><label>Preço por Unidade (R$):</label><input type="number" step="0.01" name="preco_unidade" required class="form-control" placeholder="0.00"></div>
-                <div class="form-group"><label>Volume / Quantidade Inicial:</label><input type="number" step="0.01" name="volume_disponivel" required class="form-control" placeholder="0.00"></div>
-            </div>
-            <input type="hidden" name="dimensoes" value="Padrão Industrial">
-            <button type="submit" class="btn btn-success" style="width: 100%; margin-top: 20px; font-weight: bold;">💾 Cadastrar Item no Inventário</button>
-        </form>
+    
+    <div class="container">
+        <h2>Página 4: Almoxarifado - Cadastro de Materiais e Insumos</h2>
+        
+        <div style="background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.1);">
+            <form id="formMaterial" action="/salvar_material" method="POST">
+                <input type="hidden" id="registro_id" name="id">
+                
+                <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px;">
+                    <div class="form-group">
+                        <label>Atalhos de Mercado (Sugestões):</label>
+                        <select id="seletor_mercado" onchange="carregarSugestao()" style="width:100%; padding:10px; border-radius:4px; border:1px solid #bdc3c7;">
+                            <option value="">-- Material Personalizado --</option>
+                            <option value="aco_1020">Tarugo Aço SAE 1020 (kg)</option>
+                            <option value="alum_6061">Barra Alumínio 6061 (kg)</option>
+                            <option value="oleo_soluvel">Óleo Solúvel de Corte (L)</option>
+                            <option value="parafuso_m8">Parafuso Allen M8 (Cento)</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Código do Material / SKU:</label>
+                        <input type="text" name="codigo_material" id="codigo_material" required placeholder="Ex: MAT-001">
+                    </div>
+                    <div class="form-group">
+                        <label>Nome do Material / Insumo:</label>
+                        <input type="text" name="nome_material" id="nome_material" required placeholder="Ex: Barra Redonda Aço">
+                    </div>
+                    <div class="form-group">
+                        <label>Preço Unitário (R$):</label>
+                        <input type="number" step="0.01" name="preco_unidade" id="preco_unidade" required placeholder="0.00">
+                    </div>
+                    <div class="form-group">
+                        <label>Dimensões / Embalagem:</label>
+                        <input type="text" name="dimensoes" id="dimensoes" placeholder="Ex: Ø3/4 x 3000mm">
+                    </div>
+                    <div class="form-group">
+                        <label>Volume / Quantidade Disponível:</label>
+                        <input type="number" step="0.01" name="volume_disponivel" id="volume_disponivel" required placeholder="0.00">
+                    </div>
+                </div>
+                <div style="margin-top: 20px;">
+                    <button type="submit" id="btnSalvar" class="btn btn-success">💾 Salvar Material</button>
+                    <button type="button" id="btnCancelar" class="btn btn-danger" style="display:none;" onclick="cancelarEdicao()">Cancelar Edição</button>
+                </div>
+            </form>
+        </div>
+        <h3>Materiais e Insumos no Almoxarifado</h3>
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th>Código</th>
+                    <th>Nome do Material</th>
+                    <th>Dimensões</th>
+                    <th>Preço Unitário</th>
+                    <th>Estoque Inicial</th>
+                    <th>Ações</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for mat in materiais %}
+                <tr>
+                    <td><code>{{ mat.codigo_material }}</code></td>
+                    <td><strong>{{ mat.nome_material }}</strong></td>
+                    <td>{{ mat.dimensoes }}</td>
+                    <td>R$ {{ "%.2f"|format(mat.preco_unidade) }}</td>
+                    <td>{{ mat.volume_disponivel }}</td>
+                    <td>
+                        <button class="btn btn-primary" onclick="prepararEdicao('{{ mat.id }}', '{{ mat.codigo_material }}', '{{ mat.nome_material }}', '{{ mat.preco_unidade }}', '{{ mat.dimensoes }}', '{{ mat.volume_disponivel }}')">✏️ Alterar</button>
+                        <form action="/deletar_material/{{ mat.id }}" method="POST" style="display:inline;" onsubmit="return confirm('Deseja excluir este material?');">
+                            <button type="submit" class="btn btn-danger">❌ Deletar</button>
+                        </form>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
     </div>
-    <h3>Saldo Atual em Estoque de Matérias-Primas</h3>
-    <table class="data-table">
-        <thead>
-            <tr>
-                <th>Código SKU</th>
-                <th>Descrição do Insumo</th>
-                <th>Preço Unitário</th>
-                <th>Volume Disponível</th>
-                <th>Valor em Estoque</th>
-                <th>Ações</th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for mat in materiais %}
-            <tr>
-                <td><code>{{ mat.codigo_material }}</code></td>
-                <td><strong>{{ mat.nome_material }}</strong></td>
-                <td>R$ {{ "%.2f"|format(mat.preco_unidade) }}</td>
-                <td>{{ "%.2f"|format(mat.volume_disponivel) }} un/kg</td>
-                <td style="font-weight: bold; color: #27ae60;">R$ {{ "%.2f"|format(mat.preco_unidade * mat.volume_disponivel) }}</td>
-                <td>
-                    <form action="/deletar_material/{{ mat.id }}" method="POST" style="display:inline;" onsubmit="return confirm('Deseja excluir este material mestre?');">
-                        <button type="submit" class="btn btn-danger" style="font-size: 11px; padding: 4px 8px;">❌ Excluir</button>
-                    </form>
-                </td>
-            </tr>
-            {% else %}
-            <tr><td colspan="6" style="text-align:center; color:#7f8c8d; padding:20px;">📭 Nenhum insumo ou matéria-prima cadastrada no almoxarifado central.</td></tr>
-            {% endfor %}
-        </tbody>
-    </table>
-</div>
 
-<script>
-    function alternarMenuMobile() { document.getElementById('menuNavegacao').classList.toggle('ativo'); }
+    <script>
+        // Cotações e dados base de mercado para fins pedagógicos
+        const mercadoSugestões = {
+            aco_1020: { cod: "MAT-ACO-1020", nome: "Tarugo Aço SAE 1020", preco: 14.50, dim: "Ø 2 polegadas x 1000mm", vol: 500 },
+            alum_6061: { cod: "MAT-ALU-6061", nome: "Barra Alumínio 6061", preco: 38.20, dim: "Barra Chata 1x1/4 x 2000mm", vol: 200 },
+            oleo_soluvel: { cod: "INS-OLEO-CUT", nome: "Óleo Solúvel para Usinagem", preco: 22.90, dim: "Galão 5 Litros", vol: 50 },
+            parafuso_m8: { cod: "INS-PAR-M8", nome: "Parafuso Allen M8x30", preco: 85.00, dim: "Caixa c/ 100un", vol: 10 }
+        };
+
+        function carregarSugestao() {
+            const escolha = document.getElementById('seletor_mercado').value;
+            if (mercadoSugestões[escolha]) {
+                const item = mercadoSugestões[escolha];
+                document.getElementById('codigo_material').value = item.cod;
+                document.getElementById('nome_material').value = item.nome;
+                document.getElementById('preco_unidade').value = item.preco;
+                document.getElementById('dimensoes').value = item.dim;
+                document.getElementById('volume_disponivel').value = item.vol;
+            }
+        }
+
+        function prepararEdicao(id, codigo, nome, preco, dim, vol) {
+            document.getElementById('formMaterial').action = '/alterar_material/' + id;
+            document.getElementById('codigo_material').value = codigo;
+            document.getElementById('nome_material').value = nome;
+            document.getElementById('preco_unidade').value = preco;
+            document.getElementById('dimensoes').value = dim;
+            document.getElementById('volume_disponivel').value = vol;
+            
+            document.getElementById('btnSalvar').innerText = "🔄 Confirmar Alterações";
+            document.getElementById('btnCancelar').style.display = "inline-block";
+        }
+
+        function cancelarEdicao() {
+            document.getElementById('formMaterial').action = '/salvar_material';
+            document.getElementById('formMaterial').reset();
+            document.getElementById('btnSalvar').innerText = "💾 Salvar Material";
+            document.getElementById('btnCancelar').style.display = "none";
+        }
+    </script>
+    <script>
+    // Função para abrir e fechar o menu hambúrguer no celular
+    function alternarMenuMobile() {
+        const menu = document.getElementById('menuNavegacao');
+        menu.classList.toggle('ativo');
+    }
+
+    // Controle do tamanho das fontes para as Big TVs ou baixa visão
     let tamanhoAtual = 100;
     function mudarFonte(direcao) {
         tamanhoAtual += (direcao * 10);
-        if(tamanhoAtual >= 70 && tamanhoAtual <= 160) document.body.style.fontSize = tamanhoAtual + "%";
+        if(tamanhoAtual >= 70 && tamanhoAtual <= 160) {
+            document.body.style.fontSize = tamanhoAtual + "%";
+        }
     }
+
+    // Controle do modo de alto contraste
     function alternarAltoContraste() {
         const corpo = document.body;
-        if (corpo.style.filter === "invert(1) contrast(1.2)") { corpo.style.filter = "none"; } 
-        else { corpo.style.filter = "invert(1) contrast(1.2)"; }
+        if (corpo.style.filter === "invert(1) contrast(1.2)") {
+            corpo.style.filter = "none";
+            corpo.style.backgroundColor = "";
+        } else {
+            corpo.style.filter = "invert(1) contrast(1.2)";
+            corpo.style.backgroundColor = "black";
+        }
     }
 </script>
+
 </body>
 </html>
