@@ -1,13 +1,13 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-    <meta charset="UTF-8">
-    <title>Engenharia de Ativos - Máquinas e Equipamentos</title>
+   <meta charset="UTF-8">
+    <title>Máquinas</title>
+    <link rel="icon" type="image/png" href="static/logo.png">
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 </head>
 <body>
-
-<!-- Barra de Acessibilidade Superior Oficial -->
+   <!-- Barra de Acessibilidade Superior Oficial -->
 <div class="barra-acessibilidade">
     <button class="btn-acessibilidade" onclick="alternarAltoContraste()">Acessibilidade 🌓 Alto Contraste</button>
     <button class="btn-acessibilidade" onclick="mudarFonte(1)">A+</button>
@@ -18,23 +18,24 @@
 <header class="cabecalho-corporativo">
     <div class="identidade-container">
         <div class="branding-flex">
-            <img src="{{ url_for('static', filename='logo.png') }}" alt="Logo" style="height: 65px; width: auto; object-fit: contain; border-radius: 4px;">
+            <img src="{{ url_for('static', filename='logo.png') }}" alt="Logo TERADMAS" style="height: 65px; width: auto; object-fit: contain; border-radius: 4px;">
             <div class="texto-empresa">
                 <h1>TERCEIRO ADM ASSOCIADOS</h1>
-                <p>Módulo 2: Engenharia de Ativos, Capacidade de Postos e Custos de Células</p>
+                <p>Módulo 4: Gestão do Fluxo Financeiro, Caixa e Demonstrativo de Resultados</p>
             </div>
         </div>
         <button class="menu-hamburguer" onclick="alternarMenuMobile()">☰</button>
     </div>
 
-    <!-- Navegação Responsiva com Menus Dropdown Unificados de 13 Itens -->
+    <!-- Navegação Responsiva com Menus Dropdown Unificados -->
+       <!-- COPIE ESTE MENU INTEGRAL E SUBSTITUA EM TODOS OS SEUS ARQUIVOS HTML -->
     <nav class="nav-container" id="menuNavegacao">
         <ul class="menu-cascata">
             <li class="item-menu">
                 <a href="#" class="link-principal">🏢 Módulos Iniciais ▾</a>
                 <ul class="sub-menu">
                     <li><a href="/estrutura">1. Investimentos Imobiliários</a></li>
-                    <li><a href="/maquinas" style="background: #eef9ff; color: #007bff; font-weight: bold;">2. Engenharia de Ativos (Máquinas)</a></li>
+                    <li><a href="/maquinas">2. Engenharia de Ativos (Máquinas)</a></li>
                     <li><a href="/rh">👥 3. Gestão de Pessoal (RH)</a></li>
                     <li><a href="/financeiro">💰 4. Fluxo Financeiro</a></li>
                     <li><a href="/requisicoes">📋 5. Central de Requisições</a></li>
@@ -49,81 +50,230 @@
                     <li><a href="/precificacao">9. Controladoria e Precificação</a></li>
                 </ul>
             </li>
+            <li class="item-menu">
+                <a href="#" class="link-principal">💰 Operações Comerciais ▾</a>
+                <ul class="sub-menu">
+                    <li><a href="/vendas">10. Painel de Vendas Comerciais</a></li>
+                    <li><a href="/estoque">11. Inventário de Acabados</a></li>
+                </ul>
+            </li>
+            <li class="item-menu">
+                <a href="#" class="link-principal">🏭 Chão de Fábrica & ROI ▾</a>
+                <ul class="sub-menu">
+                    <li><a href="/pcp">12. Planilha de Processos (PCP)</a></li>
+                    <li><a href="/roi">13. Indicadores de Retorno (ROI)</a></li>
+                </ul>
+            </li>
         </ul>
     </nav>
+
 </header>
 
+
+    
 <div class="container">
-    <h2>Página 2: Engenharia de Ativos Imobilizados e Postos de Manufatura</h2>
-    <p>O custo por minuto calculado neste módulo consolida a depreciação e a amortização direta do layout fabril.</p>
-
-    <div style="background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); margin-bottom: 25px; border-top: 4px solid #2b5797;">
-        <h3>⚙️ Imobilizar e Ativar Novo Equipamento Produtivo</h3>
-        <form action="/salvar_maquina" method="POST">
-            <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 15px; margin-bottom: 15px;">
-                <div class="form-group"><label>Nome do Equipamento:</label><input type="text" name="nome_equipamento" required class="form-control" placeholder="Ex: Torno CNC Mazak"></div>
-                <div class="form-group"><label>Potência Motor (kW):</label><input type="number" step="0.1" name="potencia" required class="form-control"></div>
-                <div class="form-group"><label>Consumo Estimado (kWh):</label><input type="number" step="0.1" name="consumo_eletrico" required class="form-control"></div>
-                <div class="form-group"><label>Gatilho Manutenção (Horas):</label><input type="number" name="frequencia_manutencao" required class="form-control" value="500"></div>
-            </div>
+    <h2>Página 3: Engenharia de Ativos - Máquinas e Equipamentos</h2>
+    
+    <div style="background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.1);">
+        <form id="formMaquina" action="/salvar_maquina" method="POST">
+            <input type="hidden" id="registro_id" name="id">
+            <input type="hidden" id="custo_estrutural_oculto" value="{{ custo_minuto_estrutural }}">
+            
             <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 15px;">
-                <div class="form-group"><label>Preço de Aquisição (R$):</label><input type="number" step="0.01" name="preco_compra" required class="form-control"></div>
-                <div class="form-group"><label>Depreciação Mensal (R$):</label><input type="number" step="0.01" name="depreciacao_mensal" required class="form-control"></div>
-                <div class="form-group"><label>Valor Residual de Venda (R$):</label><input type="number" step="0.01" name="valor_venda_final" required class="form-control"></div>
-                <div class="form-group"><label>Custo Estrutural Minuto (R$):</label><input type="number" step="0.0001" name="custo_minuto_maquina" required class="form-control" placeholder="0.0000"></div>
+                <div class="form-group">
+                    <label>Selecionar Modelo Base:</label>
+                    <select id="seletor_modelo" onchange="carregarPreDefinido()" style="width:100%; padding:10px; border-radius:4px; border:1px solid #bdc3c7;">
+                        <option value="">-- Equipamento Personalizado --</option>
+                        <option value="cnc_mazak">Torno CNC Mazak Quick Turn</option>
+                        <option value="fresadora">Fresadora Universal</option>
+                        <option value="serra_fita">Serra de Fita Industrial</option>
+                        <option value="furadeira">Furadeira de Bancada</option>
+                        <option value="retifica">Retífica Tangencial</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Nome do Equipamento:</label>
+                    <input type="text" name="nome_equipamento" id="nome_equipamento" required placeholder="Ex: CNC Linha A">
+                </div>
+                <div class="form-group">
+                    <label>Potência Instalada (kW):</label>
+                    <input type="number" step="0.1" name="potencia" id="potencia" required oninput="calcularMinutoMaquina()">
+                </div>
+                <div class="form-group">
+                    <label>Consumo Elétrico Médio (kWh):</label>
+                    <input type="number" step="0.1" name="consumo_eletrico" id="consumo_eletrico" required oninput="calcularMinutoMaquina()">
+                </div>
+                <div class="form-group">
+                    <label>Velocidade Máxima (RPM):</label>
+                    <input type="text" name="velocidade" id="velocidade" placeholder="Ex: 5000">
+                </div>
+                <div class="form-group">
+                    <label>Avanço de Trabalho (mm/min):</label>
+                    <input type="text" name="avanco" id="avanco" placeholder="Ex: 30000">
+                </div>
+                <div class="form-group">
+                    <label>Comprimento Máximo (mm):</label>
+                    <input type="number" name="comprimento_max" id="comprimento_max">
+                </div>
+                <div class="form-group">
+                    <label>Diâmetro Máximo (mm):</label>
+                    <input type="number" name="diametro_max" id="diametro_max">
+                </div>
+                <div class="form-group">
+                    <label>Ciclo Preventiva (Horas):</label>
+                    <input type="number" name="frequencia_manutencao" id="frequencia_manutencao" required placeholder="Ex: 500">
+                </div>
+                <div class="form-group">
+                    <label>Horas Trabalhadas Atuais:</label>
+                    <input type="number" name="horas_trabalhadas" id="horas_trabalhadas" value="0">
+                </div>
+                <div class="form-group">
+                    <label>Preço de Aquisição (R$):</label>
+                    <input type="number" step="0.01" name="preco_compra" id="preco_compra" required>
+                </div>
+                <div class="form-group">
+                    <label>Depreciação Contábil (R$/Mês):</label>
+                    <input type="number" step="0.01" name="depreciacao_mensal" id="depreciacao_mensal" required oninput="calcularMinutoMaquina()">
+                </div>
+                <div class="form-group">
+                    <label>Valor Venda Residual (R$):</label>
+                    <input type="number" step="0.01" name="valor_venda_final" id="valor_venda_final" required>
+                </div>
+                <div class="form-group">
+                    <label>Nome do Operador Alocado:</label>
+                    <input type="text" name="operador_nome" id="operador_nome" required placeholder="Ex: João Silva">
+                </div>
+                <div class="form-group">
+                    <label>Custo Minuto Operador (R$/min):</label>
+                    <input type="number" step="0.0001" name="custo_minuto_operador" id="custo_minuto_operador" required oninput="calcularMinutoMaquina()">
+                </div>
+                <div class="form-group" style="grid-column: span 2;">
+                    <label style="color:var(--secondary-color); font-weight: bold;">CUSTO MINUTO MÁQUINA CALCULADO (R$/min):</label>
+                    <input type="number" step="0.0001" name="custo_minuto_maquina" id="custo_minuto_maquina" readonly style="background-color:#e9ecef; font-weight:bold;">
+                </div>
             </div>
-
-            <!-- Inputs Trabalhistas Ocultos de Segurança Trabalhista para Evitar Erros de Request -->
-            <input type="hidden" name="operador_nome" value="Posto Vago - Aguardando MOD">
-            <input type="hidden" name="custo_minuto_operador" value="0.0">
-            <input type="hidden" name="salario_base" value="0.0">
-            <input type="hidden" name="valor_adicionais" value="0.0">
-            <input type="hidden" name="turno" value="Diurno">
-            <input type="hidden" name="dia_semana" value="Regular">
-
-            <button type="submit" class="btn btn-success" style="width: 100%; margin-top: 15px; font-weight: bold;">💾 Cadastrar Ativo Imobilizado</button>
+            <div style="margin-top: 20px;">
+                <button type="submit" id="btnSalvar" class="btn btn-success">💾 Salvar Equipamento</button>
+                <button type="button" id="btnCancelar" class="btn btn-danger" style="display:none;" onclick="cancelarEdicao()">Cancelar Edição</button>
+            </div>
         </form>
     </div>
-    <h3>Quadro Geral de Postos e Células Ativas</h3>
+
+    <h3>Ativos Cadastrados e Status de Manutenção</h3>
     <table class="data-table">
         <thead>
             <tr>
-                <th>Código Ativo</th>
-                <th>Equipamento / Capacidade</th>
-                <th>Custo Estrutural Fixo</th>
-                <th>Operador Alocado</th>
-                <th>Status Técnico</th>
+                <th>Nome / Modelo</th>
+                <th>Capacidades Mecânicas</th>
+                <th>Operador Responsável</th>
+                <th>Horômetro / Ciclo</th>
+                <th>Gatilho Mnt.</th>
+                <th>Minuto Máquina</th>
                 <th>Ações</th>
             </tr>
         </thead>
         <tbody>
             {% for maq in maquinas %}
             <tr>
-                <td><code>ATV-00{{ maq.id }}</code></td>
-                <td><strong>{{ maq.nome_equipamento }}</strong><br><small>Potência: {{ maq.potencia }} kW</small></td>
-                <td><span style="font-family: monospace;">R$ {{ "%.4f"|format(maq.custo_minuto_maquina) }}/min</span></td>
-                <td>👤 {{ maq.operador_nome }}</td>
+                <td><strong>{{ maq.nome_equipamento }}</strong></td>
+                <td>Comp: {{ maq.comprimento_max }}mm | Diâm: {{ maq.diametro_max }}mm</td>
+                <td>{{ maq.operador_nome }} <br><small style="color:#666;">(MOD: R$ {{ "%.4f"|format(maq.custo_minuto_operador) }}/min)</small></td>
+                <td>{{ maq.horas_trabalhadas }}h / {{ maq.frequencia_manutencao }}h</td>
                 <td>
-                    {% if maq.operador_nome == 'Posto Vago - Aguardando MOD' %}
-                        <span style="color:#856404; background:#fff3cd; padding:3px 6px; border-radius:3px; font-weight:bold;">⚠️ Aguardando MOD</span>
+                    {% if maq.horas_trabalhadas >= maq.frequencia_manutencao %}
+                        <span class="alerta-manutencao">⚠️ CRÍTICO: REVISAR</span>
                     {% else %}
-                        <span style="color:#155724; background:#d4edda; padding:3px 6px; border-radius:3px; font-weight:bold;">✅ Célula Operacional</span>
+                        <span class="manutencao-ok">✅ Operacional</span>
                     {% endif %}
                 </td>
+                <td><strong>R$ {{ "%.4f"|format(maq.custo_minuto_maquina) }}</strong></td>
                 <td>
-                    <form action="/deletar_maquina/{{ maq.id }}" method="POST" style="display:inline;" onsubmit="return confirm('Deseja desativar este ativo do sistema?');">
-                        <button type="submit" class="btn btn-danger" style="font-size: 11px; padding: 4px 8px;">❌ Baixa</button>
+                    <button class="btn btn-primary" onclick="prepararEdicao('{{ maq.id }}', '{{ maq.nome_equipamento }}', '{{ maq.potencia }}', '{{ maq.consumo_eletrico }}', '{{ maq.velocidade }}', '{{ maq.avanco }}', '{{ maq.comprimento_max }}', '{{ maq.diametro_max }}', '{{ maq.frequencia_manutencao }}', '{{ maq.horas_trabalhadas }}', '{{ maq.preco_compra }}', '{{ maq.depreciacao_mensal }}', '{{ maq.valor_venda_final }}', '{{ maq.custo_minuto_maquina }}', '{{ maq.operador_nome }}', '{{ maq.custo_minuto_operador }}')">✏️ Alterar</button>
+                    <form action="/deletar_maquina/{{ maq.id }}" method="POST" style="display:inline;" onsubmit="return confirm('Excluir este ativo permanentemente?');">
+                        <button type="submit" class="btn btn-danger">❌ Deletar</button>
                     </form>
                 </td>
             </tr>
-            {% else %}
-            <tr><td colspan="6" style="text-align:center; color:#7f8c8d; padding:20px;">📭 Nenhum equipamento ou posto de trabalho cadastrado no layout fabril.</td></tr>
             {% endfor %}
         </tbody>
     </table>
 </div>
-
 <script>
+    const catalogos = {
+        cnc_mazak: { nome: "Torno CNC Mazak Quick Turn", pot: 25, cons: 18, vel: "5000", avan: "30000", comp: 500, diam: 350, mnt: 1000, preco: 450000, dep: 3750, venda: 90000, operador: "Operador CNC Especializado", custo_op: 0.45 },
+        fresadora: { nome: "Fresadora Universal", pot: 7.5, cons: 5.5, vel: "1800", avan: "1200", comp: 800, diam: 0, mnt: 600, preco: 85000, dep: 708, venda: 20000, operador: "Fresador Mecânico", custo_op: 0.38 },
+        serra_fita: { nome: "Serra de Fita Industrial", pot: 2.2, cons: 1.8, vel: "80", avan: "50", comp: 300, diam: 250, mnt: 300, preco: 18000, dep: 150, venda: 4000, operador: "Auxiliar de Produção", custo_op: 0.22 },
+        furadeira: { nome: "Furadeira de Bancada", pot: 1.5, cons: 1.1, vel: "2500", avan: "Manual", comp: 150, diam: 32, mnt: 400, preco: 6500, dep: 54, venda: 1500, operador: "Ajudante Geral", custo_op: 0.20 },
+        retifica: { nome: "Retífica Tangencial", pot: 5.5, cons: 4.2, vel: "2800", avan: "1500", comp: 600, diam: 200, mnt: 800, preco: 120000, dep: 1000, venda: 30000, operador: "Retificador Técnico", custo_op: 0.40 }
+    };
+
+    function carregarPreDefinido() {
+        const modelo = document.getElementById('seletor_modelo').value;
+        if (catalogos[modelo]) {
+            const item = catalogos[modelo];
+            document.getElementById('nome_equipamento').value = item.nome;
+            document.getElementById('potencia').value = item.pot;
+            document.getElementById('consumo_eletrico').value = item.cons;
+            document.getElementById('velocidade').value = item.vel;
+            document.getElementById('avanco').value = item.avan;
+            document.getElementById('comprimento_max').value = item.comp;
+            document.getElementById('diametro_max').value = item.diam;
+            document.getElementById('frequencia_manutencao').value = item.mnt;
+            document.getElementById('preco_compra').value = item.preco;
+            document.getElementById('depreciacao_mensal').value = item.dep;
+            document.getElementById('valor_venda_final').value = item.venda;
+            document.getElementById('operador_nome').value = item.operador;
+            document.getElementById('custo_minuto_operador').value = item.custo_op;
+            calcularMinutoMaquina();
+        }
+    }
+
+    function calcularMinutoMaquina() {
+        const depreciacao = parseFloat(document.getElementById('depreciacao_mensal').value) || 0;
+        const consumoKwh = parseFloat(document.getElementById('consumo_eletrico').value) || 0;
+        const custoEstruturalMinuto = parseFloat(document.getElementById('custo_estrutural_oculto').value) || 0;
+        const custoOperadorMinuto = parseFloat(document.getElementById('custo_minuto_operador').value) || 0;
+        
+        const custoKwhEnergia = 0.75; 
+        const minutosNoMes = 176 * 60;
+
+        const depreciacaoPorMinuto = depreciacao / minutosNoMes;
+        const energiaPorMinuto = (consumoKwh * custoKwhEnergia) / 60;
+        const c_mm = custoEstruturalMinuto + depreciacaoPorMinuto + energiaPorMinuto + custoOperadorMinuto;
+        
+        document.getElementById('custo_minuto_maquina').value = c_mm.toFixed(4);
+    }
+
+    function prepararEdicao(id, nome, pot, cons, vel, avan, comp, diam, mnt, horas, preco, dep, venda, cmm, operador, custo_op) {
+        document.getElementById('formMaquina').action = '/alterar_maquina/' + id;
+        document.getElementById('registro_id').value = id;
+        document.getElementById('nome_equipamento').value = nome;
+        document.getElementById('potencia').value = pot;
+        document.getElementById('consumo_eletrico').value = cons;
+        document.getElementById('velocidade').value = vel;
+        document.getElementById('avanco').value = avan;
+        document.getElementById('comprimento_max').value = comp;
+        document.getElementById('diametro_max').value = diam;
+        document.getElementById('frequencia_manutencao').value = mnt;
+        document.getElementById('horas_trabalhadas').value = horas;
+        document.getElementById('preco_compra').value = preco;
+        document.getElementById('depreciacao_mensal').value = dep;
+        document.getElementById('valor_venda_final').value = venda;
+        document.getElementById('custo_minuto_maquina').value = cmm;
+        document.getElementById('operador_nome').value = operador;
+        document.getElementById('custo_minuto_operador').value = custo_op;
+        
+        document.getElementById('btnSalvar').innerText = "🔄 Confirmar Alterações";
+        document.getElementById('btnCancelar').style.display = "inline-block";
+    }
+
+    function cancelarEdicao() {
+        document.getElementById('formMaquina').action = '/salvar_maquina';
+        document.getElementById('formMaquina').reset();
+        document.getElementById('btnSalvar').innerText = "💾 Salvar Equipamento";
+        document.getElementById('btnCancelar').style.display = "none";
+    }
+
     function alternarMenuMobile() { document.getElementById('menuNavegacao').classList.toggle('ativo'); }
     let tamanhoAtual = 100;
     function mudarFonte(direcao) {
@@ -132,8 +282,11 @@
     }
     function alternarAltoContraste() {
         const corpo = document.body;
-        if (corpo.style.filter === "invert(1) contrast(1.2)") { corpo.style.filter = "none"; } 
-        else { corpo.style.filter = "invert(1) contrast(1.2)"; }
+        if (corpo.style.filter === "invert(1) contrast(1.2)") {
+            corpo.style.filter = "none"; corpo.style.backgroundColor = "";
+        } else {
+            corpo.style.filter = "invert(1) contrast(1.2)"; corpo.style.backgroundColor = "black";
+        }
     }
 </script>
 </body>
