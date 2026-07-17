@@ -2,9 +2,66 @@
 <html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Planejamento e Controle de Processos</title>
-     <link rel="icon" type="image/png" href="static/logo.png">
+    <link rel="icon" type="image/png" href="static/logo.png">
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <style>
+        /* CSS de Segurança para Alto Contraste Nativo nas Linhas de OP e Inputs */
+        .alto-contraste body {
+            background-color: #000000 !important;
+            color: #ffffff !important;
+        }
+        .alto-contraste .data-table th {
+            background-color: #1e1e1e !important;
+            color: #ffffff !important;
+            border: 1px solid #ffffff !important;
+        }
+        .alto-contraste .data-table td {
+            background-color: #000000 !important;
+            color: #ffffff !important;
+            border: 1px solid #ffffff !important;
+        }
+        .alto-contraste .op-concluida {
+            background-color: #1c3d1c !important;
+            color: #a3e2a3 !important;
+        }
+        .alto-contraste .op-ativa {
+            background-color: #000000 !important;
+            color: #ffffff !important;
+        }
+        .alto-contraste input {
+            background-color: #1e1e1e !important;
+            color: #ffffff !important;
+            border: 2px solid #ffffff !important;
+        }
+        .alto-contraste input::placeholder {
+            color: #b3b3b3 !important;
+        }
+        .alto-contraste code {
+            background-color: #2a2a2a !important;
+            color: #00ff00 !important;
+            padding: 2px 6px;
+            border-radius: 4px;
+        }
+        
+        /* Contêiner de rolagem para tabelas densas em dispositivos móveis */
+        .tabela-responsiva {
+            overflow-x: auto;
+            width: 100%;
+            margin-bottom: 20px;
+            -webkit-overflow-scrolling: touch;
+        }
+        
+        .input-apontamento {
+            padding: 8px; 
+            font-size: 14px; 
+            width: 120px; 
+            border: 1px solid #ccc; 
+            border-radius: 4px;
+            box-sizing: border-box;
+        }
+    </style>
 </head>
 <body>
 
@@ -29,7 +86,6 @@
     </div>
 
     <!-- Navegação Responsiva com Menus Dropdown Unificados -->
-       <!-- COPIE ESTE MENU INTEGRAL E SUBSTITUA EM TODOS OS SEUS ARQUIVOS HTML -->
     <nav class="nav-container" id="menuNavegacao">
         <ul class="menu-cascata">
             <li class="item-menu">
@@ -69,51 +125,56 @@
     </nav>
 </header>
     
-    <div class="container">
+<div class="container">
     <h2>Página 10: Chão de Fábrica - Planilha Operacional de Roteiros Encadeados (PCP)</h2>
     
-    <h3>Fila de Production e Ordens de Serviço Ativas</h3>
-    <table class="data-table">
-        <thead>
-            <tr>
-                <th>OS (Pedido)</th>
-                <th>Nº Operação</th>
-                <th>Posto / Máquina</th>
-                <th>Produto / Lote</th>
-                <th>Entrada</th>
-                <th>Tempo Lote</th>
-                <th>Saída (Fim)</th>
-                <th>Custo Operação</th>
-                <th>Operador / Apontamento</th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for ord in ordens %}
-            <tr style="background-color: {% if ord.status == 'Finalizado' %}#e2efda{% else %}#ffffff{% endif %};">
-                <td><code>OS-00{{ ord.pedido_id }}</code></td>
-                <td><strong>{{ ord.numero_operacao }}</strong></td>
-                <td>⚙️ {{ ord.maquina_name }}</td>
-                <td><code>{{ ord.codigo_produto }}</code> - {{ ord.nome_produto }}</td>
-                <td style="color:#1a5276; font-weight:bold;"><small>{{ ord.data_entrada }}</small></td>
-                <td>{{ "%.1f"|format(ord.tempo_estimado_min) }} min</td>
-                <td style="color:#78281f; font-weight:bold;"><small>{{ ord.data_saida }}</small></td>
-                <td style="color:#27ae60; font-weight:bold;">R$ {{ "%.2f"|format(ord.custo_operacao) }}</td>
-                <td><strong>{{ ord.operador_nome }}</strong></td>
-                <td>
-                    {% if ord.status != 'Finalizado' %}
-                    <form action="/dar_baixa_op/{{ ord.id }}" method="POST" style="display: flex; gap: 5px; align-items: center;">
-                        <input type="text" name="operador_nome" required placeholder="Nome Operador" style="padding: 5px; font-size: 11px; width: 100px; border: 1px solid #ccc; border-radius:3px;">
-                        <button type="submit" class="btn btn-success" style="padding: 5px 8px; font-size: 11px;">🏁 Concluir</button>
-                    </form>
-                    {% else %}
-                        <span style="color:#375623; font-weight:bold;">✔ Concluído</span>
-                    {% endif %}
-                </td>
-            </tr>
-            {% endfor %}
-        </tbody>
-    </table>
+    <h3>Fila de Produção e Ordens de Serviço Ativas</h3>
+    <!-- Contêiner responsivo para evitar esmagamento em smartphones e tablets -->
+    <div class="tabela-responsiva">
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th>OS (Pedido)</th>
+                    <th>Nº Operação</th>
+                    <th>Posto / Máquina</th>
+                    <th>Produto / Lote</th>
+                    <th>Entrada</th>
+                    <th>Tempo Lote</th>
+                    <th>Saída (Fim)</th>
+                    <th>Custo Operação</th>
+                    <th>Operador / Apontamento</th>
+                    <th>Ações</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for ord in ordens %}
+                <tr class="{% if ord.status == 'Finalizado' %}op-concluida{% else %}op-ativa{% endif %}" style="background-color: {% if ord.status == 'Finalizado' %}#e2efda{% else %}#ffffff{% endif %}; color: {% if ord.status == 'Finalizado' %}#274e13{% else %}#000000{% endif %};">
+                    <td><code>OS-00{{ ord.pedido_id }}</code></td>
+                    <td><strong>{{ ord.numero_operacao }}</strong></td>
+                    <td>⚙️ {{ ord.maquina_name }}</td>
+                    <td><code>{{ ord.codigo_produto }}</code> - {{ ord.nome_produto }}</td>
+                    <td style="color:#1a5276; font-weight:bold;"><small>{{ ord.data_entrada }}</small></td>
+                    <td>{{ "%.1f"|format(ord.tempo_estimado_min) }} min</td>
+                    <td style="color:#78281f; font-weight:bold;"><small>{{ ord.data_saida }}</small></td>
+                    <td style="color:#27ae60; font-weight:bold;">R$ {{ "%.2f"|format(ord.custo_operacao) }}</td>
+                    <td><strong>{{ ord.operador_nome }}</strong></td>
+                    <td>
+                        {% if ord.status != 'Finalizado' %}
+                        <form action="/dar_baixa_op/{{ ord.id }}" method="POST" style="display: flex; gap: 5px; align-items: center; margin: 0;">
+                            <input type="text" name="operador_nome" required placeholder="Nome Operador" class="input-apontamento">
+                            <button type="submit" class="btn btn-success" style="padding: 8px 12px; font-size: 13px; font-weight: bold; cursor: pointer;">🏁 Concluir</button>
+                        </form>
+                        {% else %}
+                            <span style="color:#375623; font-weight:bold;">✔ Concluído</span>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
 </div>
+
 <script>
     // Função para abrir e fechar o menu hambúrguer no celular
     function alternarMenuMobile() {
@@ -130,18 +191,11 @@
         }
     }
 
-    // Controle do modo de alto contraste
+    // Controle nativo por classes do modo de alto contraste corrigido
     function alternarAltoContraste() {
         const corpo = document.body;
-        if (corpo.style.filter === "invert(1) contrast(1.2)") {
-            corpo.style.filter = "none";
-            corpo.style.backgroundColor = "";
-        } else {
-            corpo.style.filter = "invert(1) contrast(1.2)";
-            corpo.style.backgroundColor = "black";
-        }
+        corpo.classList.toggle('alto-contraste');
     }
 </script>
-
 </body>
 </html>
