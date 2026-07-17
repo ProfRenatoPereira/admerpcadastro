@@ -2,6 +2,7 @@
 <html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>DANFE Fictícia - NF-{{ p.id }}</title>
     <link rel="icon" type="image/png" href="static/logo.png">
     <style>
@@ -12,7 +13,29 @@
         .footer-obs { margin-top: 20px; border-top: 2px dashed #000; padding-top: 10px; font-style: italic; }
         .btn-print { background: #000; color: #fff; padding: 10px; border: none; font-weight: bold; cursor: pointer; display: block; margin: 10px auto; }
         
-        /* Regras exclusivas para organizar a impressão */
+        /* CSS de Segurança para Alto Contraste Nativo sem quebrar o layout */
+        .alto-contraste body {
+            background-color: #000000 !important;
+            color: #ffffff !important;
+        }
+        .alto-contraste .nf-box {
+            background-color: #121212 !important;
+            border: 2px solid #ffffff !important;
+            color: #ffffff !important;
+        }
+        .alto-contraste .header, .alto-contraste .footer-obs {
+            border-bottom-color: #ffffff !important;
+            border-top-color: #ffffff !important;
+        }
+        .alto-contraste hr {
+            border-color: #ffffff !important;
+        }
+        .alto-contraste .btn-print {
+            background: #ffffff !important;
+            color: #000000 !important;
+        }
+
+        /* Regras exclusivas para organizar a impressão limpa */
         @media print { 
             .btn-print, 
             .barra-acessibilidade, 
@@ -23,9 +46,13 @@
             body { 
                 margin: 0; 
                 padding: 0; 
+                background-color: #ffffff !important;
+                color: #000000 !important;
             }
             .nf-box { 
-                border: 2px solid #000;
+                border: 2px solid #000 !important;
+                background-color: #ffffff !important;
+                color: #000000 !important;
                 max-width: 100%;
                 page-break-inside: avoid;
             }
@@ -158,16 +185,10 @@
         }
     }
 
-    // Controle do modo de alto contraste
+    // Controle nativo por classes do modo de alto contraste corrigido
     function alternarAltoContraste() {
         const corpo = document.body;
-        if (corpo.style.filter === "invert(1) contrast(1.2)") {
-            corpo.style.filter = "none";
-            corpo.style.backgroundColor = "";
-        } else {
-            corpo.style.filter = "invert(1) contrast(1.2)";
-            corpo.style.backgroundColor = "black";
-        }
+        corpo.classList.toggle('alto-contraste');
     }
 </script>
 </body>
