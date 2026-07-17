@@ -2,39 +2,109 @@
 <html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
-    <title>PCP Metalúrgico - Login</title>
+    <!-- Meta tag essencial para responsividade universal em celulares e tablets -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ERP Acadêmico - Terceiro ADM Associados</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <style>
+        /* Estilos de Segurança e Responsividade do Contêiner */
+        body {
+            margin: 0;
+            padding: 15px;
+            box-sizing: border-box;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background-color: #f4f6f9; /* Fundo neutro e limpo */
+            font-family: Arial, sans-serif;
+        }
+        .login-container {
+            width: 100%;
+            max-width: 480px; /* Impede distorções em TVs gigantes de sala de aula */
+            margin: 0 auto;
+            padding: 30px;
+            background: #ffffff;
+            border-radius: 8px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+            box-sizing: border-box;
+        }
+        .logo-placeholder {
+            font-size: 1.5rem; 
+            font-weight: bold; 
+            text-align: center; 
+            margin-bottom: 20px;
+            color: #2c3e50;
+        }
+        .form-group {
+            margin-bottom: 20px;
+        }
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: bold;
+            color: #2d3748; /* Texto escuro com alto contraste para projetores */
+        }
+        .form-group input {
+            width: 100%;
+            padding: 12px; /* Área de toque expandida para dispositivos móveis */
+            font-size: 16px; /* Evita que navegadores mobile deem zoom indesejado */
+            border: 1px solid #cbd5e1;
+            border-radius: 6px;
+            box-sizing: border-box;
+        }
+        .texto-ajuda {
+            font-size: 0.9em; 
+            color: #4a5568; 
+            margin-bottom: 25px; 
+            text-align: center;
+            line-height: 1.5;
+        }
+        .btn-principal {
+            width: 100%; 
+            padding: 12px; 
+            font-size: 16px; 
+            font-weight: bold; 
+            cursor: pointer; 
+            margin-top: 10px;
+            background-color: #3498db;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            transition: background 0.2s ease;
+        }
+        .btn-principal:hover {
+            background-color: #2980b9;
+        }
+    </style>
 </head>
 <body>
     <div class="login-container">
-        <div class="logo-placeholder">⚙️ PCP METALÚRGICO</div>
+        <!-- Logotipo do Simulador -->
+        <div class="logo-placeholder">
+            ⚙️ TERCEIRO ADM ASSOCIADOS
+        </div>
         
-        <h3>Acesso do Aluno / Grupo</h3>
-        <form action="/login" method="POST">
-            <div class="form-group">
-                <label for="usuario">Usuário / Equipe:</label>
-                <input type="text" id="usuario" name="usuario" required autocomplete="off">
-            </div>
-            <div class="form-group">
-                <label for="senha">Senha:</label>
-                <input type="password" id="senha" name="senha" required>
-            </div>
-            <button type="submit" class="btn btn-primary" style="width:100%;">Entrar no Sistema</button>
-        </form>
+        <h3 style="text-align: center; color: #1a202c; margin-bottom: 10px;">Inicialização do Simulador</h3>
+        <p class="texto-ajuda">
+            Insira as informações da sua equipe de administração para gerar a alocação de setores e destravar as operações do ERP.
+        </p>
 
-        <hr style="margin: 20px 0; border: 0; border-top: 1px solid #ccc;">
+        <!-- Formulário Acadêmico Simplificado -->
+        <form action="/inicializar_simulador" method="POST">
+            <div class="form-group">
+                <label for="nome_empresa">Nome da Empresa Simulada / Grupo:</label>
+                <input type="text" id="nome_empresa" name="nome_empresa" placeholder="Ex: Alfa Consultoria Industrial" required autocomplete="off">
+            </div>
+            
+            <div class="form-group">
+                <label for="capital_inicial">Orçamento de Capital Disponível (R$):</label>
+                <input type="number" step="0.01" id="capital_inicial" name="capital_inicial" placeholder="Ex: 500000.00" required autocomplete="off">
+            </div>
 
-        <h3>Solicitar Novo Acesso</h3>
-        <form action="/cadastrar_usuario" method="POST">
-            <div class="form-group">
-                <label for="reg_usuario">Nome do Grupo/Aluno:</label>
-                <input type="text" id="reg_usuario" name="usuario" required autocomplete="off">
-            </div>
-            <div class="form-group">
-                <label for="reg_senha">Defina uma Senha:</label>
-                <input type="password" id="reg_senha" name="senha" required>
-            </div>
-            <button type="submit" class="btn btn-success" style="width:100%;">Solicitar Cadastro</button>
+            <button type="submit" class="btn-principal">
+                Iniciar Simulação Operacional
+            </button>
         </form>
     </div>
 </body>
