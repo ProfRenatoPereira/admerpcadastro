@@ -5,9 +5,16 @@ import math
 from flask import Flask, render_template, request, redirect, url_for, flash
 
 app = Flask(__name__)
+from whitenoise import WhiteNoise  # <-- Adicione este import
+
+app = Flask(__name__)
 app.secret_key = 'chave_secreta_pedagogica'
 
+# <-- Adicione esta linha logo abaixo do app.secret_key:
+app.wsgi_app = WhiteNoise(app.wsgi_app, root='static/', prefix='static/')
+
 DATABASE = 'database.db'
+
 
 def get_db_connection():
     conn = sqlite3.connect(DATABASE)
