@@ -126,7 +126,27 @@ def calcular_caixa_disponivel(conn):
     caixa_atual = capital_inicial - float(investido_maquinas) - float(comprado_materiais) + float(faturamento) - float(folha_rh) - aluguel_fixo
     return caixa_atual, capital_inicial
 
-    
+
+
+
+# --- ROTAS DE ENTRADA DO SIMULADOR INTEGRADO ---
+
+@app.route('/')
+def index():
+    """Renderiza a tela inicial de login/setup onde o aluno injeta o Capital Inicial"""
+    return render_template('login.html')
+
+@app.route('/login', methods=['GET', 'POST'])
+def login():
+    """Redireciona amigavelmente requisições antigas de login para a raiz oficial"""
+    if request.method == 'POST':
+        return redirect(url_for('estrutura'))
+    return redirect(url_for('index'))
+
+@app.route('/cadastrar_usuario', methods=['POST'])
+def cadastrar_usuario():
+    """Redirecionamento de segurança para chamadas legadas de cadastro"""
+    return redirect(url_for('estrutura'))
 
 
 
