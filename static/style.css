@@ -237,3 +237,14 @@ input:readonly, input[readonly] {
     .sub-menu li a { font-size: 16px; min-width: 300px; }
     .data-table th, .data-table td { font-size: 16px; padding: 16px; }
 }
+
+
+
+.alto-contraste .card-caixa-mestre {
+    background-color: #1a1a1a !important;
+    border: 2px solid #ffffff !important;
+    color: #00ff00 !important;
+}
+.alto-contraste .card-caixa-mestre h4, .alto-contraste .card-caixa-mestre span {
+    color: #ffffff !important;
+}
