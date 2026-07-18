@@ -3,18 +3,13 @@ import sqlite3
 import datetime
 import math
 from flask import Flask, render_template, request, redirect, url_for, flash
-
-app = Flask(__name__)
-from whitenoise import WhiteNoise  # <-- Adicione este import
+from whitenoise import WhiteNoise
 
 app = Flask(__name__)
 app.secret_key = 'chave_secreta_pedagogica'
-
-# <-- Adicione esta linha logo abaixo do app.secret_key:
 app.wsgi_app = WhiteNoise(app.wsgi_app, root='static/', prefix='static/')
 
 DATABASE = 'database.db'
-
 
 def get_db_connection():
     conn = sqlite3.connect(DATABASE)
@@ -22,7 +17,7 @@ def get_db_connection():
     return conn
 
 def init_db():
-    """Inicializa as tabelas e injeta o Cenário Industrial Base completo para auditoria pedagógica"""
+    """Cria todas as tabelas do sistema de forma robusta e integrada no banco de dados"""
     conn = get_db_connection()
     cursor = conn.cursor()
 
@@ -70,6 +65,8 @@ def init_db():
             vida_util_meses INTEGER DEFAULT 120
         )
     ''')
+
+
     # Módulo 4: Almoxarifado de Insumos e Matérias-Primas (Inventário Expandido)
     cursor.execute('''
         CREATE TABLE IF NOT EXISTS materiais (
@@ -82,7 +79,7 @@ def init_db():
         )
     ''')
 
-    # Módulo 5: Central de Requisições de Compras
+    # Módulo 5: Central de Requisições de Compras - Corrigida a duplicidade de colunas do lote
     cursor.execute('''
         CREATE TABLE IF NOT EXISTS requisicoes_compras (
             id INTEGER PRIMARY KEY AUTOINCREMENT, 
@@ -105,30 +102,10 @@ def init_db():
     cursor.execute('CREATE TABLE IF NOT EXISTS pedidos_vendas (id INTEGER PRIMARY KEY AUTOINCREMENT, produto_id INTEGER NOT NULL, quantidade INTEGER NOT NULL, desconto_percentual REAL DEFAULT 0, observacoes TEXT, data_pedido TIMESTAMP DEFAULT CURRENT_TIMESTAMP, FOREIGN KEY(produto_id) REFERENCES produtos(id))')
     cursor.execute('CREATE TABLE IF NOT EXISTS ordens_processo (id INTEGER PRIMARY KEY AUTOINCREMENT, pedido_id INTEGER NOT NULL, numero_operacao TEXT NOT NULL, maquina_name TEXT NOT NULL, codigo_produto TEXT NOT NULL, nome_produto TEXT NOT NULL, data_entrada TEXT NOT NULL, tempo_estimado_min REAL NOT NULL, data_saida TEXT NOT NULL, operador_nome TEXT DEFAULT "Pendente", status TEXT DEFAULT "Na Fila", custo_operacao REAL DEFAULT 0.0, FOREIGN KEY(pedido_id) REFERENCES pedidos_vendas(id))')
     conn.commit()
-
-    # 🚀 ENGENHARIA DE SEED AUTOMÁTICO PARA EVITAR RESET DE BANCO NO RENDER GRATUITO
-    check = cursor.execute('SELECT COUNT(*) AS total FROM investimentos_imobiliarios').fetchone()
-    if check['total'] == 0:
-        cursor.execute('''
-            INSERT INTO investimentos_imobiliarios (turma_nome, cidade_regiao, bairro_imovel, area_imovel, taxa_selic, valor_imovel_estimado, aluguel_regional, perc_acionistas, capital_inicial_negocio)
-            VALUES ('Metalúrgica Modelo S/A - Cenário Base', 'Curitiba CIC', 'CIC (Distrito Industrial)', 450.00, 11.39, 3825000.00, 13500.00, 25.0, 500000.00)
-        ''')
-        cursor.execute('''
-            INSERT INTO maquinas (nome_equipamento, potencia, consumo_eletrico, velocidade, avanco, comprimento_max, diametro_max, frequencia_manutencao, horas_trabalhadas, preco_compra, depreciacao_mensal, valor_venda_final, custo_minuto_maquina, operador_nome, custo_minuto_operador, salario_base, valor_adicionais, turno_trabalho, dia_semana, vida_util_meses)
-            VALUES ('Centro de Usinagem CNC ROMI 5X', 22.0, 15.4, '8000', '20000', 1000, 500, 1000, 120, 320000.00, 2666.66, 64000.00, 0.9540, 'Carlos Souza (Técnico CNC)', 0.45, 3100.00, 930.00, 'Diurno', 'Regular', 120)
-        ''')
-        cursor.execute('''
-            INSERT INTO maquinas (nome_equipamento, potencia, consumo_eletrico, velocidade, avanco, comprimento_max, diametro_max, frequencia_manutencao, horas_trabalhadas, preco_compra, depreciacao_mensal, valor_venda_final, custo_minuto_maquina, operador_nome, custo_minuto_operador, salario_base, valor_adicionais, turno_trabalho, dia_semana, vida_util_meses)
-            VALUES ('Prensa Hidráulica 100T', 15.0, 10.5, '60', '1200', 800, 800, 1500, 45, 140000.00, 1166.66, 28000.00, 0.6210, 'Marcos Lima (Meio Oficial)', 0.22, 1850.00, 282.40, 'Diurno', 'Regular', 120)
-        ''')
-        cursor.execute("INSERT INTO materiais (codigo_material, nome_material, preco_unidade, dimensoes, volume_disponivel) VALUES ('TUB-MEC-ST52', 'Tubo Mecânico de Alta Resistência ST52', 45.50, 'Ø 3 pol x 2000mm', 150.0)")
-        cursor.execute("INSERT INTO materiais (codigo_material, nome_material, preco_unidade, dimensoes, volume_disponivel) VALUES ('TAR-ACO-4140', 'Tarugo Redondo Aço Liga SAE 4140', 28.90, 'Ø 2 pol x 1000mm', 300.0)")
-        cursor.execute("INSERT INTO produtos (id, codigo_produto, nome_produto, custo_total_fabricacao) VALUES (1, 'PROD-EIXO-CNC', 'Eixo de Transmissão Usinado', 115.40)")
-        cursor.execute("INSERT INTO estrutura_produto (produto_id, maquina_id, material_id, tempo_processo_min, quantidade_material) VALUES (1, 1, 2, 12.0, 1.5)")
-        cursor.execute("INSERT INTO formacao_precos (produto_id, imposto_municipal, imposto_estadual, imposto_federal, margem_lucro, preco_venda_final) VALUES (1, 5.0, 18.0, 9.25, 35.0, 245.50)")
-        cursor.execute("INSERT INTO estoque_produtos (produto_id, quantidade_disponivel) VALUES (1, 25.0)")
-        conn.commit()
     conn.close()
+
+if not os.path.exists(DATABASE):
+    init_db()
 
 def calcular_caixa_disponivel(conn):
     """Função Contábil Interna para calcular o saldo dinâmico atualizado do Giro em todas as telas"""
@@ -142,15 +119,17 @@ def calcular_caixa_disponivel(conn):
     folha_rh = conn.execute("SELECT COALESCE(SUM(salario_base + valor_adicionais), 0) AS total FROM maquinas WHERE operador_nome != 'Posto Vago - Aguardando MOD' AND operador_nome != ''").fetchone()['total']
     caixa_atual = capital_inicial - investido_maquinas - comprado_materiais + faturamento - folha_rh - aluguel_fixo
     return caixa_atual, capital_inicial
-@app.route('/')
-def index():
-    return render_template('login.html')
+    
+
+
+
 
 @app.route('/inicializar_simulador', methods=['POST'])
 def inicializar_simulador():
     nome_empresa = request.form.get('nome_empresa', 'Empresa Simulada S/A')
     try: capital_inicial = float(request.form.get('capital_inicial', 0))
     except ValueError: capital_inicial = 0.0
+    
     conn = get_db_connection()
     conn.execute('DELETE FROM investimentos_imobiliarios')
     conn.execute('DELETE FROM maquinas')
@@ -162,14 +141,19 @@ def inicializar_simulador():
     conn.execute('DELETE FROM pedidos_vendas')
     conn.execute('DELETE FROM ordens_processo')
     conn.execute('DELETE FROM requisicoes_compras')
+    
+    # CORRIGIDO: Inseridos os campos obrigatórios NOT NULL com strings padrão para evitar estouro de restrição do SQLite
     conn.execute('''
-        INSERT INTO investimentos_imobiliarios (turma_nome, cidade_regiao, bairro_imovel, area_imovel, taxa_selic, valor_imovel_estimado, aluguel_regional, perc_acionistas, capital_inicial_negocio)
+        INSERT INTO investimentos_imobiliarios 
+        (turma_nome, cidade_regiao, bairro_imovel, area_imovel, taxa_selic, valor_imovel_estimado, aluguel_regional, perc_acionistas, capital_inicial_negocio)
         VALUES (?, 'Não Definido', 'Não Definido', 0.0, 11.39, 0.0, 0.0, 0.0, ?)
     ''', (nome_empresa, capital_inicial))
     conn.commit()
     conn.close()
+    
     flash(f'Empresa {nome_empresa} inicializada com orçamento de R$ {capital_inicial:,.2f}!', 'success')
     return redirect(url_for('estrutura'))
+
 
 @app.route('/estrutura')
 def estrutura():
