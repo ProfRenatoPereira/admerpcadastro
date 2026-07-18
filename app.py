@@ -108,17 +108,24 @@ if not os.path.exists(DATABASE):
     init_db()
 
 def calcular_caixa_disponivel(conn):
-    """Função Contábil Interna para calcular o saldo dinâmico atualizado do Giro em todas as telas"""
+    """Função Contábil Interna robusta para calcular o saldo dinâmico atualizado do Giro"""
     ult_imovel = conn.execute('SELECT capital_inicial_negocio, aluguel_regional FROM investimentos_imobiliarios ORDER BY id DESC LIMIT 1').fetchone()
-    if not ult_imovel: return 0.0, 0.0
-    capital_inicial = float(ult_imovel['capital_inicial_negocio'])
-    aluguel_fixo = float(ult_imovel['aluguel_regional'])
+    
+    # Se o banco acabou de ser resetado e não tem nenhuma inicialização, evita o erro 500 retornando zero
+    if not ult_imovel: 
+        return 0.0, 0.0
+        
+    capital_inicial = float(ult_imovel['capital_inicial_negocio'] or 0.0)
+    aluguel_fixo = float(ult_imovel['aluguel_regional'] or 0.0)
+    
     investido_maquinas = conn.execute('SELECT COALESCE(SUM(preco_compra), 0) AS total FROM maquinas').fetchone()['total']
     comprado_materiais = conn.execute('SELECT COALESCE(SUM(preco_unidade * volume_disponivel), 0) AS total FROM materiais').fetchone()['total']
     faturamento = conn.execute('SELECT COALESCE(SUM(fp.preco_venda_final * pv.quantidade), 0) AS total FROM pedidos_vendas pv JOIN formacao_precos fp ON pv.produto_id = fp.produto_id').fetchone()['total']
     folha_rh = conn.execute("SELECT COALESCE(SUM(salario_base + valor_adicionais), 0) AS total FROM maquinas WHERE operador_nome != 'Posto Vago - Aguardando MOD' AND operador_nome != ''").fetchone()['total']
-    caixa_atual = capital_inicial - investido_maquinas - comprado_materiais + faturamento - folha_rh - aluguel_fixo
+    
+    caixa_atual = capital_inicial - float(investido_maquinas) - float(comprado_materiais) + float(faturamento) - float(folha_rh) - aluguel_fixo
     return caixa_atual, capital_inicial
+
     
 
 
@@ -554,6 +561,8 @@ def imprimir_nf(pedido_id):
     v_est = liq * (ped['imposto_estadual'] / 100.0)
     v_fed = liq * (ped['imposto_federal'] / 100.0)
     return render_template('nota_fiscal.html', p=ped, subtotal=sub, v_desconto=v_desc, total_liquido=liq, v_municipal=v_mun, v_estadual=v_est, v_federal=v_fed, total_impostos=v_mun+v_est+v_fed)
+
+
 @app.route('/financeiro')
 def financeiro():
     conn = get_db_connection()
@@ -581,8 +590,11 @@ def roi():
     despesa_pessoal = conn.execute("SELECT COALESCE(SUM(salario_base + valor_adicionais), 0) AS total FROM maquinas WHERE operador_nome != 'Posto Vago - Aguardando MOD' AND operador_nome != ''").fetchone()['total']
     caixa, total = calcular_caixa_disponivel(conn)
     conn.close()
+    
     rec, pecas, cap, aluguel = v_dados['receita_bruta'], v_dados['total_pecas'], invs['capital_total'], invs['aluguel']
     sobra = rec - despesa_pessoal - aluguel
+    
+    # CORRIGIDO: Alterado de 'dobra' para 'sobra' evitando o erro 500 no carregamento macro
     payback_meses = (cap / sobra) if sobra > 0 else 0.0
     return render_template('roi.html', receita=rec, total_pecas=pecas, capital=cap, payback_real=payback_meses, lucro_acionistas=rec*0.25, caixa_disponivel=caixa, capital_inicial=total)
 
