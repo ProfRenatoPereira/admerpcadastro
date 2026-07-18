@@ -11,90 +11,34 @@ app.wsgi_app = WhiteNoise(app.wsgi_app, root='static/', prefix='static/')
 
 DATABASE = 'database.db'
 
-def get_db_connection():
-    conn = sqlite3.connect(DATABASE)
-    conn.row_factory = sqlite3.Row
-    return conn
+# CATALOGO MESTRE PEDAGÓGICO - EXPANDIDO E COMPLETO (Se o SQLite zerar, este dicionário reconstrói a fábrica)
+CATALOGO_MAQUINAS = {
+    'cnc_romi': {'nome': 'Centro de Usinagem CNC ROMI 5X', 'pot': 22.0, 'cons': 15.4, 'vel': '8000', 'avan': '20000', 'comp': 1000, 'diam': 500, 'mnt': 1000, 'preco': 620000.0, 'dep': 5166.66, 'venda': 124000.0, 'operador': 'Carlos Souza (Técnico CNC)', 'custo_op': 0.45, 'salario': 3100.0, 'adic': 930.0, 'vida': 120},
+    'prensa_100t': {'nome': 'Prensa Hidráulica Industrial 100T', 'pot': 15.0, 'cons': 10.5, 'vel': '60', 'avan': '1200', 'comp': 800, 'diam': 800, 'mnt': 1500, 'preco': 220000.0, 'dep': 1833.33, 'venda': 44000.0, 'operador': 'Marcos Lima (Meio Oficial)', 'custo_op': 0.22, 'salario': 1850.0, 'adic': 282.40, 'vida': 120},
+    'forno_tempera': {'nome': 'Forno de Têmpera Contínua', 'pot': 45.0, 'cons': 38.0, 'vel': '1200°C', 'avan': 'Automático', 'comp': 1500, 'diam': 600, 'mnt': 800, 'preco': 180000.0, 'dep': 1500.0, 'venda': 36000.0, 'operador': 'Aline Dias (Tratadora Térmica)', 'custo_op': 0.40, 'salario': 2900.0, 'adic': 564.80, 'vida': 120},
+    'forno_revenimento': {'nome': 'Forno de Revenimento Industrial', 'pot': 30.0, 'cons': 24.0, 'vel': '700°C', 'avan': 'Estático', 'comp': 1200, 'diam': 600, 'mnt': 800, 'preco': 120000.0, 'dep': 1000.0, 'venda': 24000.0, 'operador': 'Pedro Alves (Operador Forno)', 'custo_op': 0.35, 'salario': 2400.0, 'adic': 282.40, 'vida': 120},
+    'solda_mig_tig': {'nome': 'Estação de Solda MIG/TIG Industrial', 'pot': 7.5, 'cons': 5.2, 'vel': 'N/A', 'avan': 'Manual', 'comp': 500, 'diam': 0, 'mnt': 300, 'preco': 15000.0, 'dep': 125.0, 'venda': 3000.0, 'operador': 'Bruno Silva (Soldador TIG)', 'custo_op': 0.38, 'salario': 2600.0, 'adic': 564.80, 'vida': 120},
+    'compressor_parafuso': {'nome': 'Compressor de Ar de Parafuso', 'pot': 11.0, 'cons': 8.8, 'vel': '10 bar', 'avan': 'Contínuo', 'comp': 600, 'diam': 400, 'mnt': 600, 'preco': 35000.0, 'dep': 291.66, 'venda': 7000.0, 'operador': 'Posto de Apoio / Indireto', 'custo_op': 0.0, 'salario': 0.0, 'adic': 0.0, 'vida': 120},
+    'jato_areia': {'nome': 'Jato de Areia Pressurizado', 'pot': 5.5, 'cons': 4.1, 'vel': 'N/A', 'avan': 'Manual', 'comp': 800, 'diam': 600, 'mnt': 400, 'preco': 28000.0, 'dep': 233.33, 'venda': 5600.0, 'operador': 'Auxiliar de Jateamento', 'custo_op': 0.20, 'salario': 1512.0, 'adic': 282.40, 'vida': 120}
+}
+CATALOGO_MATERIAIS = {
+    'tub_mec': {'cod': 'TUB-MEC-ST52', 'nome': 'Tubo Mecânico de Alta Resistência ST52', 'preco': 45.50, 'dim': 'Ø 3 pol x 2000mm', 'vol': 150.0},
+    'tar_aco': {'cod': 'TAR-ACO-4140', 'nome': 'Tarugo Redondo Aço Liga SAE 4140', 'preco': 28.90, 'dim': 'Ø 2 pol x 1000mm', 'vol': 300.0},
+    'bar_lat': {'cod': 'BAR-LAT-CLA', 'nome': 'Barra de Latão de Fácil Usinagem CLA', 'preco': 55.20, 'dim': 'Ø 1 pol x 3000mm', 'vol': 80.0},
+    'chapa_a36': {'cod': 'CHA-ACO-A36', 'nome': 'Chapa de Aço Carbono ASTM A36 3mm', 'preco': 18.50, 'dim': '1000x2000mm', 'vol': 200.0},
+    'gas_mig': {'cod': 'INS-GAS-MIG', 'nome': 'Cilindro Mistura Gás Solda Argônio/CO2', 'preco': 120.00, 'dim': 'Cilindro 50L', 'vol': 15.0}
+}
 
 def init_db():
-    """Cria todas as tabelas do sistema de forma robusta e integrada no banco de dados"""
+    """Cria todas as tabelas e injeta o Cenário Industrial Base completo"""
     conn = get_db_connection()
     cursor = conn.cursor()
 
     cursor.execute('CREATE TABLE IF NOT EXISTS usuarios (id INTEGER PRIMARY KEY AUTOINCREMENT, usuario TEXT UNIQUE NOT NULL, senha TEXT NOT NULL, aprovado INTEGER DEFAULT 0)')
-
-    # Módulo 1: Investimentos Imobiliários e Capital de Giro
-    cursor.execute('''
-        CREATE TABLE IF NOT EXISTS investimentos_imobiliarios (
-            id INTEGER PRIMARY KEY AUTOINCREMENT, 
-            turma_nome TEXT NOT NULL, 
-            cidade_regiao TEXT NOT NULL,
-            bairro_imovel TEXT NOT NULL,
-            area_imovel REAL NOT NULL,
-            taxa_selic REAL NOT NULL, 
-            valor_imovel_estimado REAL NOT NULL,
-            aluguel_regional REAL NOT NULL,
-            perc_acionistas REAL NOT NULL,
-            capital_inicial_negocio REAL DEFAULT 0.0
-        )
-    ''')
-
-    # Módulo 2: Engenharia de Ativos - Adicionado Vida Útil em Meses
-    cursor.execute('''
-        CREATE TABLE IF NOT EXISTS maquinas (
-            id INTEGER PRIMARY KEY AUTOINCREMENT, 
-            nome_equipamento TEXT NOT NULL, 
-            potencia REAL NOT NULL, 
-            consumo_eletrico REAL NOT NULL, 
-            velocidade TEXT, 
-            avanco TEXT, 
-            comprimento_max REAL, 
-            diametro_max REAL, 
-            frequencia_manutencao INTEGER NOT NULL, 
-            horas_trabalhadas INTEGER DEFAULT 0, 
-            preco_compra REAL NOT NULL, 
-            depreciacao_mensal REAL NOT NULL, 
-            valor_venda_final REAL NOT NULL, 
-            custo_minuto_maquina REAL NOT NULL,
-            operador_nome TEXT DEFAULT 'Posto Vago - Aguardando MOD',
-            custo_minuto_operador REAL DEFAULT 0.0,
-            salario_base REAL DEFAULT 0.0,
-            valor_adicionais REAL DEFAULT 0.0,
-            turno_trabalho TEXT DEFAULT 'Diurno',
-            dia_semana TEXT DEFAULT 'Regular',
-            vida_util_meses INTEGER DEFAULT 120
-        )
-    ''')
-
-
-    # Módulo 4: Almoxarifado de Insumos e Matérias-Primas (Inventário Expandido)
-    cursor.execute('''
-        CREATE TABLE IF NOT EXISTS materiais (
-            id INTEGER PRIMARY KEY AUTOINCREMENT, 
-            codigo_material TEXT UNIQUE NOT NULL, 
-            nome_material TEXT NOT NULL, 
-            preco_unidade REAL NOT NULL, 
-            dimensoes TEXT, 
-            volume_disponivel REAL NOT NULL
-        )
-    ''')
-
-    # Módulo 5: Central de Requisições de Compras - Corrigida a duplicidade de colunas do lote
-    cursor.execute('''
-        CREATE TABLE IF NOT EXISTS requisicoes_compras (
-            id INTEGER PRIMARY KEY AUTOINCREMENT, 
-            equipamento_tipo TEXT NOT NULL, 
-            especificacao_desejada TEXT NOT NULL, 
-            quantidade INTEGER DEFAULT 1, 
-            status TEXT DEFAULT "Pendente em Cotação", 
-            preco_cotado REAL DEFAULT 0, 
-            potencia_cotada REAL DEFAULT 0, 
-            depreciacao_sugerida REAL DEFAULT 0, 
-            vida_util_sugerida INTEGER DEFAULT 120,
-            data_requisicao TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-        )
-    ''')
-
+    cursor.execute('CREATE TABLE IF NOT EXISTS investimentos_imobiliarios (id INTEGER PRIMARY KEY AUTOINCREMENT, turma_nome TEXT NOT NULL, cidade_regiao TEXT NOT NULL, bairro_imovel TEXT NOT NULL, area_imovel REAL NOT NULL, taxa_selic REAL NOT NULL, valor_imovel_estimado REAL NOT NULL, aluguel_regional REAL NOT NULL, perc_acionistas REAL NOT NULL, capital_inicial_negocio REAL DEFAULT 0.0)')
+    cursor.execute('CREATE TABLE IF NOT EXISTS maquinas (id INTEGER PRIMARY KEY AUTOINCREMENT, nome_equipamento TEXT NOT NULL, potencia REAL NOT NULL, consumo_eletrico REAL NOT NULL, velocidade TEXT, avanco TEXT, comprimento_max REAL, diametro_max REAL, frequencia_manutencao INTEGER NOT NULL, horas_trabalhadas INTEGER DEFAULT 0, preco_compra REAL NOT NULL, depreciacao_mensal REAL NOT NULL, valor_venda_final REAL NOT NULL, custo_minuto_maquina REAL NOT NULL, operador_nome TEXT DEFAULT "Posto Vago - Aguardando MOD", custo_minuto_operador REAL DEFAULT 0.0, salario_base REAL DEFAULT 0.0, valor_adicionais REAL DEFAULT 0.0, turno_trabalho TEXT DEFAULT "Diurno", dia_semana TEXT DEFAULT "Regular", vida_util_meses INTEGER DEFAULT 120)')
+    cursor.execute('CREATE TABLE IF NOT EXISTS materiais (id INTEGER PRIMARY KEY AUTOINCREMENT, codigo_material TEXT UNIQUE NOT NULL, nome_material TEXT NOT NULL, preco_unidade REAL NOT NULL, dimensoes TEXT, volume_disponivel REAL NOT NULL)')
+    cursor.execute('CREATE TABLE IF NOT EXISTS requisicoes_compras (id INTEGER PRIMARY KEY AUTOINCREMENT, equipamento_tipo TEXT NOT NULL, especificacao_desejada TEXT NOT NULL, quantidade INTEGER DEFAULT 1, status TEXT DEFAULT "Pendente em Cotação", preco_cotado REAL DEFAULT 0, potencia_cotada REAL DEFAULT 0, depreciacao_sugerida REAL DEFAULT 0, vida_util_sugerida INTEGER DEFAULT 120, data_requisicao TIMESTAMP DEFAULT CURRENT_TIMESTAMP)')
     cursor.execute('CREATE TABLE IF NOT EXISTS produtos (id INTEGER PRIMARY KEY AUTOINCREMENT, codigo_produto TEXT UNIQUE NOT NULL, nome_produto TEXT NOT NULL, custo_total_fabricacao REAL DEFAULT 0)')
     cursor.execute('CREATE TABLE IF NOT EXISTS estrutura_produto (id INTEGER PRIMARY KEY AUTOINCREMENT, produto_id INTEGER NOT NULL, maquina_id INTEGER, material_id INTEGER, tempo_processo_min REAL DEFAULT 0, quantidade_material REAL DEFAULT 0, FOREIGN KEY(produto_id) REFERENCES produtos(id))')
     cursor.execute('CREATE TABLE IF NOT EXISTS formacao_precos (id INTEGER PRIMARY KEY AUTOINCREMENT, produto_id INTEGER UNIQUE NOT NULL, imposto_municipal REAL DEFAULT 0, imposto_estadual REAL DEFAULT 0, imposto_federal REAL DEFAULT 0, margem_lucro REAL DEFAULT 0, preco_venda_final REAL DEFAULT 0, FOREIGN KEY(produto_id) REFERENCES produtos(id))')
@@ -102,61 +46,59 @@ def init_db():
     cursor.execute('CREATE TABLE IF NOT EXISTS pedidos_vendas (id INTEGER PRIMARY KEY AUTOINCREMENT, produto_id INTEGER NOT NULL, quantidade INTEGER NOT NULL, desconto_percentual REAL DEFAULT 0, observacoes TEXT, data_pedido TIMESTAMP DEFAULT CURRENT_TIMESTAMP, FOREIGN KEY(produto_id) REFERENCES produtos(id))')
     cursor.execute('CREATE TABLE IF NOT EXISTS ordens_processo (id INTEGER PRIMARY KEY AUTOINCREMENT, pedido_id INTEGER NOT NULL, numero_operacao TEXT NOT NULL, maquina_name TEXT NOT NULL, codigo_produto TEXT NOT NULL, nome_produto TEXT NOT NULL, data_entrada TEXT NOT NULL, tempo_estimado_min REAL NOT NULL, data_saida TEXT NOT NULL, operador_nome TEXT DEFAULT "Pendente", status TEXT DEFAULT "Na Fila", custo_operacao REAL DEFAULT 0.0, FOREIGN KEY(pedido_id) REFERENCES pedidos_vendas(id))')
     conn.commit()
+    check = cursor.execute('SELECT COUNT(*) AS total FROM investimentos_imobiliarios').fetchone()
+    if check['total'] == 0:
+        cursor.execute('''
+            INSERT INTO investimentos_imobiliarios (turma_nome, cidade_regiao, bairro_imovel, area_imovel, taxa_selic, valor_imovel_estimado, aluguel_regional, perc_acionistas, capital_inicial_negocio)
+            VALUES ('Metalúrgica Modelo S/A - Cenário Base', 'Curitiba CIC', 'CIC (Distrito Industrial)', 450.00, 11.39, 3825000.00, 13500.00, 25.0, 500000.00)
+        ''')
+        
+        # Injeção Automática do Parque Fabril do Catálogo Mestre
+        for k, m in CATALOGO_MAQUINAS.items():
+            if k in ['cnc_romi', 'prensa_100t', 'forno_tempera']:
+                minutos_mes = 44 * 4.33 * 60
+                c_mm = (m['dep'] / minutos_mes) + ((m['pot'] * 0.75) / 60) + (13500.00 / minutos_mes)
+                cursor.execute('''
+                    INSERT INTO maquinas (nome_equipamento, potencia, consumo_eletrico, velocidade, avanco, comprimento_max, diametro_max, frequencia_manutencao, horas_trabalhadas, preco_compra, depreciacao_mensal, valor_venda_final, custo_minuto_maquina, operador_nome, custo_minuto_operador, salario_base, valor_adicionais, turno_trabalho, dia_semana, vida_util_meses)
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, 0, ?, ?, ?, ?, ?, ?, ?, ?, 'Diurno', 'Regular', ?)
+                ''', (m['nome'], m['pot'], m['cons'], m['vel'], m['avan'], m['comp'], m['diam'], m['mnt'], m['preco'], m['dep'], m['venda'], c_mm, m['operador'], m['custo_op'], m['salario'], m['adic'], m['vida']))
+
+        # Injeção Automática de Materiais no Almoxarifado
+        for mat in CATALOGO_MATERIAIS.values():
+            cursor.execute("INSERT INTO materiais (codigo_material, nome_material, preco_unidade, dimensoes, volume_disponivel) VALUES (?, ?, ?, ?, ?)", (mat['cod'], mat['nome'], mat['preco'], mat['dim'], mat['vol']))
+
+        # Ficha Técnica BOM de Exemplo
+        cursor.execute("INSERT INTO produtos (id, codigo_produto, nome_produto, custo_total_fabricacao) VALUES (1, 'PROD-EIXO-CNC', 'Eixo de Transmissão Usinado', 115.40)")
+        cursor.execute("INSERT INTO estrutura_produto (produto_id, maquina_id, material_id, tempo_processo_min, quantidade_material) VALUES (1, 1, 2, 12.0, 1.5)")
+        cursor.execute("INSERT INTO formacao_precos (produto_id, imposto_municipal, imposto_estadual, imposto_federal, margem_lucro, preco_venda_final) VALUES (1, 5.0, 18.0, 9.25, 35.0, 245.50)")
+        cursor.execute("INSERT INTO estoque_produtos (produto_id, quantidade_disponivel) VALUES (1, 25.0)")
+        conn.commit()
     conn.close()
 
 if not os.path.exists(DATABASE):
     init_db()
-
 def calcular_caixa_disponivel(conn):
-    """Função Contábil Interna robusta para calcular o saldo dinâmico atualizado do Giro"""
+    """Calcula o caixa mestre e repassa para todas as visões do sistema"""
     ult_imovel = conn.execute('SELECT capital_inicial_negocio, aluguel_regional FROM investimentos_imobiliarios ORDER BY id DESC LIMIT 1').fetchone()
-    
-    # Se o banco acabou de ser resetado e não tem nenhuma inicialização, evita o erro 500 retornando zero
-    if not ult_imovel: 
-        return 0.0, 0.0
-        
+    if not ult_imovel: return 0.0, 0.0
     capital_inicial = float(ult_imovel['capital_inicial_negocio'] or 0.0)
     aluguel_fixo = float(ult_imovel['aluguel_regional'] or 0.0)
-    
     investido_maquinas = conn.execute('SELECT COALESCE(SUM(preco_compra), 0) AS total FROM maquinas').fetchone()['total']
     comprado_materiais = conn.execute('SELECT COALESCE(SUM(preco_unidade * volume_disponivel), 0) AS total FROM materiais').fetchone()['total']
     faturamento = conn.execute('SELECT COALESCE(SUM(fp.preco_venda_final * pv.quantidade), 0) AS total FROM pedidos_vendas pv JOIN formacao_precos fp ON pv.produto_id = fp.produto_id').fetchone()['total']
     folha_rh = conn.execute("SELECT COALESCE(SUM(salario_base + valor_adicionais), 0) AS total FROM maquinas WHERE operador_nome != 'Posto Vago - Aguardando MOD' AND operador_nome != ''").fetchone()['total']
-    
     caixa_atual = capital_inicial - float(investido_maquinas) - float(comprado_materiais) + float(faturamento) - float(folha_rh) - aluguel_fixo
     return caixa_atual, capital_inicial
 
-
-
-
-# --- ROTAS DE ENTRADA DO SIMULADOR INTEGRADO ---
-
 @app.route('/')
 def index():
-    """Renderiza a tela inicial de login/setup onde o aluno injeta o Capital Inicial"""
     return render_template('login.html')
-
-@app.route('/login', methods=['GET', 'POST'])
-def login():
-    """Redireciona amigavelmente requisições antigas de login para a raiz oficial"""
-    if request.method == 'POST':
-        return redirect(url_for('estrutura'))
-    return redirect(url_for('index'))
-
-@app.route('/cadastrar_usuario', methods=['POST'])
-def cadastrar_usuario():
-    """Redirecionamento de segurança para chamadas legadas de cadastro"""
-    return redirect(url_for('estrutura'))
-
-
-
 
 @app.route('/inicializar_simulador', methods=['POST'])
 def inicializar_simulador():
     nome_empresa = request.form.get('nome_empresa', 'Empresa Simulada S/A')
     try: capital_inicial = float(request.form.get('capital_inicial', 0))
     except ValueError: capital_inicial = 0.0
-    
     conn = get_db_connection()
     conn.execute('DELETE FROM investimentos_imobiliarios')
     conn.execute('DELETE FROM maquinas')
@@ -168,19 +110,27 @@ def inicializar_simulador():
     conn.execute('DELETE FROM pedidos_vendas')
     conn.execute('DELETE FROM ordens_processo')
     conn.execute('DELETE FROM requisicoes_compras')
+    conn.commit()
+    conn.close()
     
-    # CORRIGIDO: Inseridos os campos obrigatórios NOT NULL com strings padrão para evitar estouro de restrição do SQLite
+    init_db()
+    conn = get_db_connection()
     conn.execute('''
-        INSERT INTO investimentos_imobiliarios 
-        (turma_nome, cidade_regiao, bairro_imovel, area_imovel, taxa_selic, valor_imovel_estimado, aluguel_regional, perc_acionistas, capital_inicial_negocio)
+        INSERT INTO investimentos_imobiliarios (turma_nome, cidade_regiao, bairro_imovel, area_imovel, taxa_selic, valor_imovel_estimado, aluguel_regional, perc_acionistas, capital_inicial_negocio)
         VALUES (?, 'Não Definido', 'Não Definido', 0.0, 11.39, 0.0, 0.0, 0.0, ?)
     ''', (nome_empresa, capital_inicial))
     conn.commit()
     conn.close()
-    
-    flash(f'Empresa {nome_empresa} inicializada com orçamento de R$ {capital_inicial:,.2f}!', 'success')
+    flash(f'Empresa {nome_empresa} inicializada com sucesso!', 'success')
     return redirect(url_for('estrutura'))
+@app.route('/login', methods=['GET', 'POST'])
+def login():
+    if request.method == 'POST': return redirect(url_for('estrutura'))
+    return redirect(url_for('index'))
 
+@app.route('/cadastrar_usuario', methods=['POST'])
+def cadastrar_usuario():
+    return redirect(url_for('estrutura'))
 
 @app.route('/estrutura')
 def estrutura():
@@ -202,6 +152,7 @@ def salvar_estrutura():
     conn.commit()
     conn.close()
     return redirect(url_for('estrutura'))
+
 @app.route('/alterar_estrutura/<int:id>', methods=['POST'])
 def alterar_estrutura(id):
     conn = get_db_connection()
@@ -221,7 +172,6 @@ def deletar_estrutura(id):
     conn.commit()
     conn.close()
     return redirect(url_for('estrutura'))
-
 @app.route('/maquinas')
 def maquinas():
     conn = get_db_connection()
@@ -243,6 +193,7 @@ def salvar_maquina():
     conn.commit()
     conn.close()
     return redirect(url_for('maquinas'))
+
 @app.route('/alterar_maquina/<int:id>', methods=['POST'])
 def alterar_maquina(id):
     conn = get_db_connection()
@@ -260,7 +211,6 @@ def deletar_maquina(id):
     conn.commit()
     conn.close()
     return redirect(url_for('maquinas'))
-
 @app.route('/rh')
 def rh():
     conn = get_db_connection()
@@ -276,13 +226,14 @@ def salvar_colaborador():
     if posto_vago:
         conn.execute('UPDATE maquinas SET operador_nome=?, salario_base=?, valor_adicionais=?, turno_trabalho=?, dia_semana=?, custo_minuto_operador=? WHERE id=?', (request.form.get('nome_completo', 'Colaborador'), float(request.form.get('salario_base') or 0), float(request.form.get('valor_adicionais') or 0), request.form.get('turno', 'Diurno'), request.form.get('dia_semana', 'Regular'), float(request.form.get('custo_minuto_operador') or 0), posto_vago['id']))
         conn.commit()
-        flash('MOD Alocado na planta com sucesso!', 'success')
+        flash('MOD Alocado com sucesso!', 'success')
     else:
         conn.execute("INSERT INTO maquinas (nome_equipamento, potencia, consumo_eletrico, velocidade, avanco, comprimento_max, diametro_max, frequencia_manutencao, horas_trabalhadas, preco_compra, depreciacao_mensal, valor_venda_final, custo_minuto_maquina, operador_nome, custo_minuto_operador, salario_base, valor_adicionais, turno_trabalho, dia_semana) VALUES ('Posto de Apoio / Indireto', 0, 0, 'N/A', 'N/A', 0, 0, 9999, 0, 0, 0, 0, 0, ?, ?, ?, ?, ?, ?)", (request.form.get('nome_completo', 'Colaborador'), float(request.form.get('custo_minuto_operador') or 0), float(request.form.get('salario_base') or 0), float(request.form.get('valor_adicionais') or 0), request.form.get('turno', 'Diurno'), request.form.get('dia_semana', 'Regular')))
         conn.commit()
-        flash('Quadro Expandido: Mão de Obra Indireta cadastrada.', 'success')
+        flash('Mão de Obra Indireta alocada.', 'success')
     conn.close()
     return redirect(url_for('rh'))
+
 @app.route('/imprimir_holerite/<int:id>/<string:tipo>')
 def imprimir_holerite(id, tipo):
     conn = get_db_connection()
@@ -297,30 +248,20 @@ def imprimir_holerite(id, tipo):
     provento_principal_valor = salario_base
     if tipo == "ferias":
         titulo_recibo = "RECIBO DE PAGAMENTO DE FÉRIAS (CLT)"
-        provento_principal_nome = "Férias Integrais Gozadas"
+        provento_principal_nome = "Férias Integrais"
         provento_principal_valor = salario_base + (salario_base / 3)
     elif tipo == "decimo":
-        titulo_recibo = "RECIBO DE DÉCIMO TERCEIRO SALÁRIO INTEGRAL"
-        provento_principal_nome = "13º Salário Integral Adiantado"
+        titulo_recibo = "RECIBO DE DÉCIMO TERCEIRO SALÁRIO"
+        provento_principal_nome = "13º Salário Integral"
         provento_principal_valor = salario_base
     total_proventos = provento_principal_valor + adicionais + horas_extras_acumuladas
-    inss = 0.0
-    if total_proventos <= 1518.00: inss = total_proventos * 0.075
-    elif total_proventos <= 2793.88: inss = (total_proventos * 0.09) - 22.77
-    elif total_proventos <= 4190.83: inss = (total_proventos * 0.12) - 106.59
-    elif total_proventos <= 8157.41: inss = (total_proventos * 0.14) - 190.40
-    else: inss = 951.64
+    inss = total_proventos * 0.075 if total_proventos <= 1518.00 else ((total_proventos * 0.09) - 22.77 if total_proventos <= 2793.88 else ((total_proventos * 0.12) - 106.59 if total_proventos <= 4190.83 else ((total_proventos * 0.14) - 190.40 if total_proventos <= 8157.41 else 951.64)))
     base_irrf = total_proventos - inss
-    irrf = 0.0
-    if base_irrf <= 2259.20: irrf = 0.0
-    elif base_irrf <= 2826.65: irrf = (base_irrf * 0.075) - 169.44
-    elif base_irrf <= 3751.05: irrf = (base_irrf * 0.15) - 381.44
-    elif base_irrf <= 4664.68: irrf = (base_irrf * 0.225) - 662.77
-    else: irrf = (base_irrf * 0.275) - 896.00
+    irrf = 0.0 if base_irrf <= 2259.20 else ((base_irrf * 0.075) - 169.44 if base_irrf <= 2826.65 else ((base_irrf * 0.15) - 381.44 if base_irrf <= 3751.05 else ((base_irrf * 0.225) - 662.77 if base_irrf <= 4664.68 else (base_irrf * 0.275) - 896.00)))
     vale_transporte = salario_base * 0.06 if col['turno_trabalho'] == 'Diurno' else 0.0
     total_descontos = inss + irrf + vale_transporte
     valor_liquido = total_proventos - total_descontos
-    dados_holerite = {"tipo_recibo": titulo_recibo, "nome": col['operador_nome'], "cargo": f"CBO {col['id']} - Posto Ativo", "principal_nome": provento_principal_nome, "principal_valor": provento_principal_valor, "adicionais": adicionais, "he": horas_extras_acumuladas, "inss": inss, "irrf": irrf, "vt": vale_transporte, "total_proventos": total_proventos, "total_descontos": total_descontos, "liquido": valor_liquido}
+    dados_holerite = {"tipo_recibo": titulo_recibo, "nome": col['operador_nome'], "cargo": f"CBO {col['id']} - Ativo", "principal_nome": provento_principal_nome, "principal_valor": provento_principal_valor, "adicionais": adicionais, "he": horas_extras_acumuladas, "inss": inss, "irrf": irrf, "vt": vale_transporte, "total_proventos": total_proventos, "total_descontos": total_descontos, "liquido": valor_liquido}
     return render_template('imprimir_holerite.html', h=dados_holerite)
 
 @app.route('/calcular_rescisao/<int:id>/<string:tipo>', methods=['POST'])
@@ -332,10 +273,9 @@ def calcular_rescisao(id, tipo):
         total_rescisao = base * 0.5 if tipo == "justa_causa" else (base * 1.1 if tipo == "voluntaria" else base * 2.40)
         conn.execute('UPDATE maquinas SET operador_nome = "Posto Vago - Aguardando MOD", custo_minuto_operador = 0.0, salario_base = 0.0, valor_adicionais = 0.0 WHERE id = ?', (id,))
         conn.commit()
-        flash(f"Rescisão Concluída. Valor Líquido Homologado: R$ {total_rescisao:,.2f}", "warning")
+        flash(f"Rescisão Concluída. Líquido: R$ {total_rescisao:,.2f}", "warning")
     conn.close()
     return redirect(url_for('rh'))
-
 @app.route('/orcamentos')
 def orcamentos():
     conn = get_db_connection()
@@ -343,14 +283,13 @@ def orcamentos():
     caixa, total = calcular_caixa_disponivel(conn)
     conn.close()
     return render_template('orcamentos.html', maquinas=maqs, caixa_disponivel=caixa, capital_inicial=total)
+
 @app.route('/salvar_orcamento_calculado', methods=['POST'])
 def salvar_orcamento_calculado():
     tipo = request.form.get('tipo_produto')
     nome_item = request.form.get('nome_item')
     lote = int(request.form.get('lote') or 1)
     preco_final = float(request.form.get('preco_final_calculado') or 0.0)
-    tempo_total = float(request.form.get('tempo_estimado_total') or 0.0)
-    
     sku = f"ORC-{tipo.upper()}-{int(preco_final)%1000}"
     conn = get_db_connection()
     try:
@@ -359,8 +298,8 @@ def salvar_orcamento_calculado():
         conn.execute('INSERT INTO formacao_precos (produto_id, imposto_municipal, imposto_estadual, imposto_federal, margem_lucro, preco_venda_final) VALUES (?, ?, ?, ?, ?, ?)', (prod_id, float(request.form.get('iss') or 5), float(request.form.get('icms') or 18), float(request.form.get('federal') or 9.25), float(request.form.get('margem') or 25), preco_final / lote))
         conn.execute('INSERT INTO pedidos_vendas (produto_id, quantidade, desconto_percentual, observacoes) VALUES (?, ?, 0, "SOB ENCOMENDA - Fila PCP")', (prod_id, lote))
         conn.commit()
-        flash('Orçamento validado! Engenharia e Demanda comercial inseridas no PCP.', 'success')
-    except sqlite3.IntegrityError: flash('Erro: Orçamento já processado.', 'danger')
+        flash('Orçamento integrado à carteira de demandas comerciais!', 'success')
+    except sqlite3.IntegrityError: flash('Erro no processamento comercial.', 'danger')
     conn.close()
     return redirect(url_for('vendas'))
 
@@ -395,16 +334,11 @@ def cotar_internet(id):
         tipo = req['equipamento_tipo'].lower()
         esp = req['especificacao_desejada'].lower()
         preco, pot, dep = 45000.0, 5.5, 375.0
-        
-        # MEGA EXPANSÃO INTEGRAÇÃO MÁQUINAS SOLICITADAS
-        if 'torno' in tipo or 'cnc' in tipo or 'centro de usinagem' in tipo: preco, pot, dep = (620000.0, 35.0, 5100.0) if '5 eixos' in esp else (290000.0, 18.0, 2400.0)
-        elif 'forno' in tipo or 'têmpera' in tipo: preco, pot, dep = (180000.0, 45.0, 1500.0)
+        if 'torno' in tipo or 'cnc' in tipo or 'centro' in tipo: preco, pot, dep = (620000.0, 35.0, 5100.0) if '5 eixos' in esp else (290000.0, 18.0, 2400.0)
+        elif 'forno' in tipo: preco, pot, dep = (180000.0, 45.0, 1500.0)
         elif 'prensa' in tipo: preco, pot, dep = (220000.0, 22.0, 1800.0)
         elif 'solda' in tipo: preco, pot, dep = (15000.0, 7.5, 125.0)
-        elif 'compressor' in tipo: preco, pot, dep = (35000.0, 11.0, 290.0)
-        elif 'jato' in tipo: preco, pot, dep = (28000.0, 5.5, 230.0)
         elif 'material' in tipo or 'insumo' in tipo: preco, pot, dep = (2500.0 if 'tubo' in esp else 850.0), 0.0, 0.0
-
         conn.execute('UPDATE requisicoes_compras SET preco_cotado=?, potencia_cotada=?, depreciacao_sugerida=?, status="Cotado - Aguardando Confirmação" WHERE id=?', (preco, pot, dep, id))
         conn.commit()
     conn.close()
@@ -428,7 +362,7 @@ def efetivar_compra(id):
             conn.execute('INSERT INTO maquinas (nome_equipamento, potencia, consumo_eletrico, velocidade, avanco, comprimento_max, diametro_max, frequencia_manutencao, horas_trabalhadas, preco_compra, depreciacao_mensal, valor_venda_final, custo_minuto_maquina, operador_nome, custo_minuto_operador, vida_util_meses) VALUES (?, ?, ?, "3000", "15000", 1000, 500, 1000, 0, ?, ?, ?, ?, "Posto Vago - Aguardando MOD", 0.0, ?)', (f"{req['especificacao_desejada']}", pot, pot * 0.7, preco, dep, preco * 0.2, c_mm, vida))
         else:
             sku_gerado = f"SKU-{req['id']}"
-            conn.execute("INSERT OR REPLACE INTO materiais (codigo_material, nome_material, preco_unidade, dimensoes, volume_disponivel) VALUES (?, ?, ?, 'Lote Adquirido', ?)", (sku_gerado, req['especificacao_desejada'], preco/float(req['quantidade']), float(req['quantidade'])))
+            conn.execute("INSERT OR REPLACE INTO materiais (codigo_material, nome_material, preco_unidade, dimensoes, volume_disponivel) VALUES (?, ?, ?, 'Lote', ?)", (sku_gerado, req['especificacao_desejada'], preco/float(req['quantidade']), float(req['quantidade'])))
         conn.execute("UPDATE requisicoes_compras SET status = 'Comprado e Ativado' WHERE id = ?", (id,))
         conn.commit()
     conn.close()
@@ -441,6 +375,7 @@ def deletar_requisicao(id):
     conn.commit()
     conn.close()
     return redirect(url_for('requisicoes'))
+
 @app.route('/inventario')
 @app.route('/materiais')
 def materiais():
@@ -515,6 +450,72 @@ def deletar_item_estrutura(id):
     conn.commit()
     conn.close()
     return redirect(url_for('engenharia'))
+@app.route('/precificacao')
+def precificacao():
+    conn = get_db_connection()
+    prods = conn.execute('SELECT p.id, p.codigo_produto, p.nome_produto, COALESCE(SUM(ep.tempo_processo_min * mq.custo_minuto_maquina), 0) + COALESCE(SUM(ep.quantidade_material * mt.preco_unidade), 0) AS custo_fabricacao FROM produtos p LEFT JOIN estrutura_produto ep ON p.id = ep.produto_id LEFT JOIN maquinas mq ON ep.maquina_id = mq.id LEFT JOIN materiais mt ON ep.material_id = mt.id GROUP BY p.id').fetchall()
+    salvos = conn.execute('SELECT fp.*, p.codigo_produto, p.nome_produto FROM formacao_precos fp JOIN produtos p ON fp.produto_id = p.id').fetchall()
+    caixa, total = calcular_caixa_disponivel(conn)
+    conn.close()
+    return render_template('precificacao.html', produtos=prods, precos_salvos=salvos, caixa_disponivel=caixa, capital_inicial=total)
+
+@app.route('/salvar_preco', methods=['POST'])
+def salvar_preco():
+    conn = get_db_connection()
+    conn.execute('INSERT OR REPLACE INTO formacao_precos (produto_id, imposto_municipal, imposto_estadual, imposto_federal, margem_lucro, preco_venda_final) VALUES (?, ?, ?, ?, ?, ?)', (int(request.form.get('produto_id') or 0), float(request.form.get('imposto_municipal') or 0), float(request.form.get('imposto_estadual') or 0), float(request.form.get('imposto_federal') or 0), float(request.form.get('margem_lucro') or 0), float(request.form.get('preco_venda_final') or 0)))
+    conn.commit()
+    conn.close()
+    return redirect(url_for('precificacao'))
+
+@app.route('/vendas')
+def vendas():
+    conn = get_db_connection()
+    prods = conn.execute('SELECT p.id, p.codigo_produto, p.nome_produto, fp.preco_venda_final, COALESCE(e.quantidade_disponivel, 0) AS estoque_atual FROM produtos p JOIN formacao_precos fp ON p.id = fp.produto_id LEFT JOIN estoque_produtos e ON p.id = e.produto_id').fetchall()
+    peds = conn.execute('SELECT pv.*, p.codigo_produto, p.nome_produto, fp.preco_venda_final, fp.imposto_municipal, fp.imposto_estadual, fp.imposto_federal FROM pedidos_vendas pv JOIN produtos p ON pv.produto_id = p.id JOIN formacao_precos fp ON p.id = fp.produto_id ORDER BY pv.id DESC').fetchall()
+    caixa, total = calcular_caixa_disponivel(conn)
+    conn.close()
+    return render_template('vendas.html', produtos=prods, pedidos=peds, caixa_disponivel=caixa, capital_inicial=total)
+@app.route('/estoque')
+def estoque():
+    conn = get_db_connection()
+    itens = conn.execute('SELECT p.id AS produto_id, p.codigo_produto, p.nome_produto, COALESCE(ep.quantidade_disponivel, 0) AS quantidade_disponivel FROM produtos p LEFT JOIN estoque_produtos ep ON p.id = ep.produto_id').fetchall()
+    peds = conn.execute("SELECT pv.*, p.codigo_produto, p.nome_produto FROM pedidos_vendas pv JOIN produtos p ON pv.produto_id = p.id WHERE pv.observacoes LIKE '%SOB ENCOMENDA%' AND pv.id NOT IN (SELECT DISTINCT pedido_id FROM ordens_processo WHERE status='Finalizado e Armazenado')").fetchall()
+    caixa, total = calcular_caixa_disponivel(conn)
+    conn.close()
+    return render_template('estoque.html', estoque_itens=itens, pedidos=peds, caixa_disponivel=caixa, capital_inicial=total)
+
+@app.route('/lancar_venda', methods=['POST'])
+def lancar_venda():
+    prod_id = int(request.form.get('produto_id') or 0)
+    qtd = int(request.form.get('quantidade') or 1)
+    conn = get_db_connection()
+    est = conn.execute('SELECT quantidade_disponivel FROM estoque_produtos WHERE produto_id = ?', (prod_id,)).fetchone()
+    estoque_atual = est['quantidade_disponivel'] if est else 0
+    if estoque_atual >= qtd:
+        conn.execute('UPDATE estoque_produtos SET quantidade_disponivel = quantidade_disponivel - ? WHERE produto_id = ?', (qtd, prod_id))
+        conn.execute('INSERT INTO pedidos_vendas (produto_id, quantidade, desconto_percentual, observacoes) VALUES (?, ?, 0, "Pronta Entrega - Faturado")', (prod_id, qtd))
+    else:
+        conn.execute('INSERT INTO pedidos_vendas (produto_id, quantidade, desconto_percentual, observacoes) VALUES (?, ?, 0, "SOB ENCOMENDA - Fila PCP")', (prod_id, qtd))
+    conn.commit()
+    conn.close()
+    return redirect(url_for('vendas'))
+
+@app.route('/deletar_venda/<int:id>', methods=['POST'])
+def deletar_venda(id):
+    conn = get_db_connection()
+    conn.execute('DELETE FROM pedidos_vendas WHERE id=?', (id,))
+    conn.commit()
+    conn.close()
+    return redirect(url_for('vendas'))
+
+@app.route('/pcp')
+def pcp():
+    conn = get_db_connection()
+    ords = conn.execute('SELECT * FROM ordens_processo ORDER BY pedido_id ASC, id ASC').fetchall()
+    caixa, total = calcular_caixa_disponivel(conn)
+    conn.close()
+    return render_template('pcp.html', ordens=ords, caixa_disponivel=caixa, capital_inicial=total)
+
 @app.route('/solicitar_producao_pcp/<int:pedido_id>', methods=['POST'])
 def solicitar_producao_pcp(pedido_id):
     conn = get_db_connection()
@@ -538,7 +539,6 @@ def solicitar_producao_pcp(pedido_id):
         flash('Ordem de Produção transmitida com sucesso para o painel do PCP!', 'success')
     conn.close()
     return redirect(url_for('estoque'))
-
 @app.route('/abastecer_estoque_pcp', methods=['POST'])
 def abastecer_estoque_pcp():
     prod_id = int(request.form.get('produto_id') or 0)
@@ -582,15 +582,12 @@ def imprimir_nf(pedido_id):
     v_fed = liq * (ped['imposto_federal'] / 100.0)
     return render_template('nota_fiscal.html', p=ped, subtotal=sub, v_desconto=v_desc, total_liquido=liq, v_municipal=v_mun, v_estadual=v_est, v_federal=v_fed, total_impostos=v_mun+v_est+v_fed)
 
-
 @app.route('/financeiro')
 def financeiro():
     conn = get_db_connection()
     faturamento_bruto = conn.execute('SELECT COALESCE(SUM(fp.preco_venda_final * pv.quantidade), 0) AS total FROM pedidos_vendas pv JOIN formacao_precos fp ON pv.produto_id = fp.produto_id').fetchone()['total']
     despesa_pessoal_bruta = conn.execute("SELECT COALESCE(SUM(salario_base + valor_adicionais), 0) AS total FROM maquinas WHERE operador_nome != 'Posto Vago - Aguardando MOD' AND operador_nome != ''").fetchone()['total']
     impostos_vendas = conn.execute('SELECT COALESCE(SUM((fp.preco_venda_final * pv.quantidade) * ((fp.imposto_municipal + fp.imposto_estadual + fp.imposto_federal) / 100.0)), 0) AS total FROM pedidos_vendas pv JOIN formacao_precos fp ON pv.produto_id = fp.produto_id').fetchone()['total']
-    ult_imovel = conn.execute('SELECT aluguel_regional FROM investimentos_imobiliarios ORDER BY id DESC LIMIT 1').fetchone()
-    custo_aluguel_fixo = ult_imovel['aluguel_regional'] if ult_imovel else 0.0
     caixa, total = calcular_caixa_disponivel(conn)
     conn.close()
     total_encargos = impostos_vendas + (despesa_pessoal_bruta * 0.20)
@@ -610,11 +607,8 @@ def roi():
     despesa_pessoal = conn.execute("SELECT COALESCE(SUM(salario_base + valor_adicionais), 0) AS total FROM maquinas WHERE operador_nome != 'Posto Vago - Aguardando MOD' AND operador_nome != ''").fetchone()['total']
     caixa, total = calcular_caixa_disponivel(conn)
     conn.close()
-    
     rec, pecas, cap, aluguel = v_dados['receita_bruta'], v_dados['total_pecas'], invs['capital_total'], invs['aluguel']
     sobra = rec - despesa_pessoal - aluguel
-    
-    # CORRIGIDO: Alterado de 'dobra' para 'sobra' evitando o erro 500 no carregamento macro
     payback_meses = (cap / sobra) if sobra > 0 else 0.0
     return render_template('roi.html', receita=rec, total_pecas=pecas, capital=cap, payback_real=payback_meses, lucro_acionistas=rec*0.25, caixa_disponivel=caixa, capital_inicial=total)
 
