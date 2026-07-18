@@ -116,6 +116,18 @@
 </header>
 
 <div class="container">
+    <!-- Widget do Caixa Mestre Integrado em Tempo Real -->
+<div class="card-caixa-mestre" style="display: flex; justify-content: space-between; align-items: center; background: #e3f2fd; border: 1px solid #90caf9; padding: 15px; border-radius: 6px; margin-bottom: 25px; color: #0d47a1; box-sizing: border-box;">
+    <div>
+        <h4 style="margin: 0; font-size: 14px; text-transform: uppercase; color: #1565c0;">💰 Caixa Operacional Disponível (Giro)</h4>
+        <p style="margin: 5px 0 0 0; font-size: 26px; font-weight: bold; font-family: monospace;">R$ {{ "%.2f"|format(caixa_disponivel) }}</p>
+    </div>
+    <div style="text-align: right; border-left: 2px solid #90caf9; padding-left: 20px;">
+        <span style="font-size: 12px; font-weight: bold; color: #1565c0;">Aporte Inicial de Capital:</span><br>
+        <strong style="font-size: 16px; font-family: monospace;">R$ {{ "%.2f"|format(capital_inicial) }}</strong>
+    </div>
+</div>
+
     <h2>Página 5: Engenharia de Produto (Estrutura e Roteiros - BOM)</h2>
     
     <!-- Grid Layout Responsivo Adaptado -->
