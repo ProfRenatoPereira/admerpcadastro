@@ -12,4 +12,4 @@ Tecnologias e plataformas: github, render e Neon PostgreSQL.
 
 Ed. 00-10/2004. Rev. 05-07/2026.
 
-!(static/admerp.gif)
+!(./static/admerp.gif)
