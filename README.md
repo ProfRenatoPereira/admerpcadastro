@@ -4,9 +4,7 @@ Site de aprendizagem.
 
 # Simulador ERP, instrumento didático-pedagógico.
 
-Modulo funcional hospedado em: render.com.
-
-Tecnologias e plataformas: github, render e Neon PostgreSQL.
+Modulo funcional hospedado em: render.com. Tecnologias e plataformas: github, render e Neon PostgreSQL.
 
 # © Copyright Física Renato Pereira ®ψΣ.
 
