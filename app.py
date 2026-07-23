@@ -286,19 +286,41 @@ def estrutura():
     flash(f'Empresa {nome_empresa} inicializada com sucesso!', 'success')
     return redirect(url_for('estrutura'))
 
-@app.route('/estrutura')
-def estrutura():
+@app.route('/inicializar_simulador', methods=['POST'])
+def inicializar_simulador():
+    nome_empresa = request.form.get('nome_empresa', 'Empresa Simulada S/A')
+    try: 
+        capital_inicial = float(request.form.get('capital_inicial', 0))
+    except ValueError: 
+        capital_inicial = 0.0
+        
     conn = get_db_connection()
     cursor = conn.cursor()
     
-    cursor.execute('SELECT * FROM investimentos_imobiliarios')
-    registros = cursor.fetchall()
+    # Executa a limpeza preventiva de forma segura (ignora tabelas que porventura não existam)
+    cursor.execute('DROP TABLE IF EXISTS investimentos_imobiliarios, maquinas, materiais, produtos, estrutura_produto, formacao_precos, estoque_produtos, pedidos_vendas, ordens_processo, requisicoes_compras CASCADE')
+    conn.commit()
+    cursor.close()
+    conn.close()
     
-    caixa, total = calcular_caixa_disponivel(conn)
+    # Força a reconstrução completa e correta das tabelas no Neon
+    init_db()
+    
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    query_param = "%s" if hasattr(conn, 'cursor_factory') else "?"
+    
+    # Correção: Inserindo em cidade_regiao de forma compatível
+    cursor.execute(f'''
+        INSERT INTO investimentos_imobiliarios (turma_nome, cidade_regiao, bairro_imovel, area_imovel, taxa_selic, valor_imovel_estimado, aluguel_regional, perc_acionistas, capital_inicial_negocio)
+        VALUES ({query_param}, 'Não Definido', 'Não Definido', 0.0, 11.39, 0.0, 0.0, 0.0, {query_param})
+    ''', (nome_empresa, capital_inicial))
+    conn.commit()
     
     cursor.close()
     conn.close()
-    return render_template('estrutura.html', taxa_atual=11.39, registros=registros, caixa_disponivel=caixa, capital_inicial=total)
+    flash(f'Empresa {nome_empresa} inicializada com sucesso!', 'success')
+    return redirect(url_for('estrutura'))
 
 @app.route('/salvar_estrutura', methods=['POST'])
 def salvar_estrutura():
