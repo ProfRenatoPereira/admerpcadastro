@@ -242,49 +242,19 @@ def logout():
     flash('Desconectado com sucesso.', 'success')
     return redirect(url_for('index'))
 
-@app.route('/estrutura', methods=['POST'])
+@app.route('/estrutura', methods=['GET'])
 def estrutura():
-    nome_empresa = request.form.get('nome_empresa', 'Empresa Simulada S/A')
-    try: 
-        capital_inicial = float(request.form.get('capital_inicial', 0))
-    except ValueError: 
-        capital_inicial = 0.0
-        
     conn = get_db_connection()
     cursor = conn.cursor()
     
-    # Limpa as tabelas usando o cursor de forma compatível
-    cursor.execute('DELETE FROM investimentos_imobiliarios')
-    cursor.execute('DELETE FROM maquinas')
-    cursor.execute('DELETE FROM materiais')
-    cursor.execute('DELETE FROM produtos')
-    cursor.execute('DELETE FROM estrutura_produto')
-    cursor.execute('DELETE FROM formacao_precos')
-    cursor.execute('DELETE FROM estoque_produtos')
-    cursor.execute('DELETE FROM pedidos_vendas')
-    cursor.execute('DELETE FROM ordens_processo')
-    cursor.execute('DELETE FROM requisicoes_compras')
-    conn.commit()
+    cursor.execute('SELECT * FROM investimentos_imobiliarios')
+    registros = cursor.fetchall()
+    
+    caixa, total = calcular_caixa_disponivel(conn)
     
     cursor.close()
     conn.close()
-    
-    init_db()
-    
-    conn = get_db_connection()
-    cursor = conn.cursor()
-    query_param = "%s" if hasattr(conn, 'cursor_factory') else "?"
-    
-    cursor.execute(f'''
-        INSERT INTO investimentos_imobiliarios (turma_nome, cidade_regiao, bairro_imovel, area_imovel, taxa_selic, valor_imovel_estimado, aluguel_regional, perc_acionistas, capital_inicial_negocio)
-        VALUES ({query_param}, 'Não Definido', 'Não Definido', 0.0, 11.39, 0.0, 0.0, 0.0, {query_param})
-    ''', (nome_empresa, capital_inicial))
-    conn.commit()
-    
-    cursor.close()
-    conn.close()
-    flash(f'Empresa {nome_empresa} inicializada com sucesso!', 'success')
-    return redirect(url_for('estrutura'))
+    return render_template('estrutura.html', taxa_atual=11.39, registros=registros, caixa_disponivel=caixa, capital_inicial=total)
 
 @app.route('/inicializar_simulador', methods=['POST'])
 def inicializar_simulador():
