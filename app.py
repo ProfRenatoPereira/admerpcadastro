@@ -998,8 +998,11 @@ def abastecer_estoque_pcp():
 def dar_baixa_op(id):
     conn = get_db_connection()
     cursor = conn.cursor()
+    
+    # Define o placeholder correto (%s para o Neon, ? para o SQLite local)
     query_param = "%s" if hasattr(conn, 'cursor_factory') else "?"
     
+    # Atualiza o status da OP usando o cursor de forma compatível
     cursor.execute(f'UPDATE ordens_processo SET operador_nome = {query_param}, status = \'Finalizado\' WHERE id = {query_param}', 
                    (request.form.get('operador_nome', 'Operador'), id))
     
