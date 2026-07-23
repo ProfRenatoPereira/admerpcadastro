@@ -242,8 +242,8 @@ def logout():
     flash('Desconectado com sucesso.', 'success')
     return redirect(url_for('index'))
 
-@app.route('/inicializar_simulador', methods=['POST'])
-def inicializar_simulador():
+@app.route('/estrutura', methods=['POST'])
+def estrutura():
     nome_empresa = request.form.get('nome_empresa', 'Empresa Simulada S/A')
     try: 
         capital_inicial = float(request.form.get('capital_inicial', 0))
