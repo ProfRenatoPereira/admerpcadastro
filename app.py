@@ -959,7 +959,6 @@ def abastecer_estoque_pcp():
     cursor = conn.cursor()
     query_param = "%s" if hasattr(conn, 'cursor_factory') else "?"
     
-    # Busca a contagem usando o cursor corrigido
     cursor.execute(f'SELECT COUNT(*) as total FROM ordens_processo WHERE pedido_id = {query_param}', (pedido_id,))
     ops_existentes = cursor.fetchone()['total']
     
@@ -971,22 +970,6 @@ def abastecer_estoque_pcp():
         conn.close()
         flash('Bloqueio de Qualidade: O Almoxarifado não pode receber este lote! Existem operações pendentes no PCP.', 'danger')
         return redirect(url_for('estoque'))
-        
-    cursor.execute(f'SELECT * FROM estoque_produtos WHERE produto_id = {query_param}', (prod_id,))
-    est = cursor.fetchone()
-    
-    if not est: 
-        cursor.execute(f'INSERT INTO estoque_produtos (produto_id, quantidade_disponivel) VALUES ({query_param}, {query_param})', (prod_id, qtd))
-    else: 
-        cursor.execute(f'UPDATE estoque_produtos SET quantidade_disponivel = quantidade_disponivel + {query_param} WHERE produto_id = {query_param}', (qtd, prod_id))
-        
-    cursor.execute(f"UPDATE ordens_processo SET status = 'Finalizado e Armazenado' WHERE pedido_id = {query_param}", (pedido_id,))
-    conn.commit()
-    
-    cursor.close()
-    conn.close()
-    flash('Recebimento efetuado e integrado com sucesso ao estoque disponível.', 'success')
-    return redirect(url_for('estoque'))
         
     cursor.execute(f'SELECT * FROM estoque_produtos WHERE produto_id = {query_param}', (prod_id,))
     est = cursor.fetchone()
