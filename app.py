@@ -960,7 +960,7 @@ def abastecer_estoque_pcp():
     query_param = "%s" if hasattr(conn, 'cursor_factory') else "?"
     
     # Adicionado o [0] no final de fetchone() para pegar o número inteiro puro
-    cursor.execute(f'SELECT COUNT(*) FROM ordens_processo WHERE pedido_id = {query_param}', (pedido_id,))
+    cursor.execute("SELECT COUNT(*) FROM ordens_processo WHERE pedido_id = %s AND status NOT LIKE 'Finalizado%'", (pedido_id,))
     resultado_existentes = cursor.fetchone()
     ops_existentes = resultado_existentes[0] if resultado_existentes else 0
     
