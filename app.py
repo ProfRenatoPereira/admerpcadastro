@@ -959,13 +959,16 @@ def abastecer_estoque_pcp():
     cursor = conn.cursor()
     query_param = "%s" if hasattr(conn, 'cursor_factory') else "?"
     
-    # Alterado para acessar por índice, evitando KeyError de incompatibilidade entre bancos
+    # Adicionado o [0] no final de fetchone() para pegar o número inteiro puro
     cursor.execute(f'SELECT COUNT(*) FROM ordens_processo WHERE pedido_id = {query_param}', (pedido_id,))
-    ops_existentes = cursor.fetchone()[0]
+    resultado_existentes = cursor.fetchone()
+    ops_existentes = resultado_existentes[0] if resultado_existentes else 0
     
     cursor.execute(f"SELECT COUNT(*) FROM ordens_processo WHERE pedido_id = {query_param} AND status NOT LIKE 'Finalizado%'", (pedido_id,))
-    ops_pendentes = cursor.fetchone()[0]
+    resultado_pendentes = cursor.fetchone()
+    ops_pendentes = resultado_pendentes[0] if resultado_pendentes else 0
     
+    # Agora a comparação numérica funcionará perfeitamente nos dois bancos
     if ops_existentes == 0 or ops_pendentes > 0:
         cursor.close()
         conn.close()
@@ -982,7 +985,6 @@ def abastecer_estoque_pcp():
         
     cursor.execute(f"UPDATE ordens_processo SET status = 'Finalizado e Armazenado' WHERE pedido_id = {query_param}", (pedido_id,))
     
-    # Salva as alterações no PostgreSQL e SQLite de forma segura
     conn.commit()
     cursor.close()
     conn.close()
