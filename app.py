@@ -948,7 +948,7 @@ def solicitar_producao_pcp(pedido_id):
     cursor.close()
     conn.close()
     return redirect(url_for('estoque'))
-
+    
 @app.route('/abastecer_estoque_pcp', methods=['POST'])
 def abastecer_estoque_pcp():
     prod_id = int(request.form.get('produto_id') or 0)
