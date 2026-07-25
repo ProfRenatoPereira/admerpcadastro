@@ -959,11 +959,12 @@ def abastecer_estoque_pcp():
     cursor = conn.cursor()
     query_param = "%s" if hasattr(conn, 'cursor_factory') else "?"
     
-    cursor.execute(f'SELECT COUNT(*) as total FROM ordens_processo WHERE pedido_id = {query_param}', (pedido_id,))
-    ops_existentes = cursor.fetchone()['total']
+    # Alterado para acessar por índice, evitando KeyError de incompatibilidade entre bancos
+    cursor.execute(f'SELECT COUNT(*) FROM ordens_processo WHERE pedido_id = {query_param}', (pedido_id,))
+    ops_existentes = cursor.fetchone()[0]
     
-    cursor.execute(f"SELECT COUNT(*) as pendentes FROM ordens_processo WHERE pedido_id = {query_param} AND status NOT LIKE 'Finalizado%'", (pedido_id,))
-    ops_pendentes = cursor.fetchone()['pendentes']
+    cursor.execute(f"SELECT COUNT(*) FROM ordens_processo WHERE pedido_id = {query_param} AND status NOT LIKE 'Finalizado%'", (pedido_id,))
+    ops_pendentes = cursor.fetchone()[0]
     
     if ops_existentes == 0 or ops_pendentes > 0:
         cursor.close()
@@ -980,10 +981,12 @@ def abastecer_estoque_pcp():
         cursor.execute(f'UPDATE estoque_produtos SET quantidade_disponivel = quantidade_disponivel + {query_param} WHERE produto_id = {query_param}', (qtd, prod_id))
         
     cursor.execute(f"UPDATE ordens_processo SET status = 'Finalizado e Armazenado' WHERE pedido_id = {query_param}", (pedido_id,))
-    conn.commit()
     
+    # Salva as alterações no PostgreSQL e SQLite de forma segura
+    conn.commit()
     cursor.close()
     conn.close()
+    
     flash('Recebimento efetuado e integrado com sucesso ao estoque disponível.', 'success')
     return redirect(url_for('estoque'))
 
